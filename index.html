@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#04070d">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HK Bus Crystal Route Dashboard</title>
+
+    <!-- Embedded Web App Manifest for Native "Install App" functionality -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiSEsgQnVzIENyeXN0YWwgRGFzaGJvYXJkIiwic2hvcnRfbmFtZSI6IkJ1cyBEYXNoIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwNDA3MGQiLCJ0aGVtZV9jb2xvciI6IiMwNDA3MGQiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2NoYXJzZXQ9dXRmLTgsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnJTNFLTNDcmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nJTIzZmYzZTNlJy8lM0UlM0N0ZXh0IHg9JzUwJyB5PSc1MCcgZmlsbD0nd2hpdGUnIGZvbnQtc2l6ZT0nNDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGR5PScuM2VtJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZiclM0VCJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
 
     <style>
         :root {
@@ -19,23 +22,22 @@
             --sans-serif-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
+        * { -webkit-tap-highlight-color: transparent; }
+
         html, body { 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            width: 100vw; 
+            margin: 0; padding: 0; 
+            height: 100dvh; width: 100vw; 
             overflow: hidden; 
-            user-select: none; 
+            user-select: none; -webkit-user-select: none;
         }
 
         body {
             font-family: var(--sans-serif-stack);
-            padding: 24px;
+            padding: clamp(12px, 3vw, 24px);
             box-sizing: border-box;
             color: var(--text-main);
             background-color: var(--bg-base);
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             cursor: pointer; 
         }
 
@@ -53,101 +55,94 @@
             z-index: -1; 
         }
 
-        /* Top Bar HUD - Simplified */
+        /* Top Bar HUD */
         .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: clamp(10px, 2vh, 20px);
+            padding-bottom: clamp(8px, 1.5vh, 16px);
             border-bottom: 1px solid var(--glass-border);
             text-shadow: var(--text-glow);
             flex-shrink: 0;
         }
         
         .clock-box { display: flex; flex-direction: column; }
-        #liveTime { font-size: 3.5rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
-        #liveDate { font-size: 1rem; font-weight: 600; margin-top: 6px; letter-spacing: 0.02em; }
+        #liveTime { font-size: clamp(2.5rem, 6vw, 3.5rem); font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+        #liveDate { font-size: clamp(0.85rem, 2vw, 1rem); font-weight: 600; margin-top: 6px; letter-spacing: 0.02em; }
 
-        /* Transparent Settings Icon */
         .settings-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            font-size: 2rem;
-            cursor: pointer;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-            position: relative;
-            z-index: 10;
+            background: transparent; border: none; color: var(--text-main);
+            font-size: clamp(1.5rem, 4vw, 2rem); cursor: pointer;
+            opacity: 0.5; transition: opacity 0.2s;
+            position: relative; z-index: 10;
         }
         .settings-btn:hover { opacity: 1; }
 
         .settings-drawer {
             background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: none;
-            position: relative; z-index: 10;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+            border-radius: 12px; padding: 16px; margin-bottom: 24px; display: none;
+            position: relative; z-index: 10; max-height: 50vh; overflow-y: auto;
         }
 
         /* Display Grid */
-        .grid-layout { flex-grow: 1; display: flex; flex-direction: column; gap: 14px; overflow: hidden; position: relative; }
-        #pageWrapper { display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; transition: opacity 0.4s; }
+        .grid-layout { flex-grow: 1; display: flex; flex-direction: column; gap: clamp(8px, 1.5vh, 14px); overflow: hidden; position: relative; }
+        #pageWrapper { display: flex; flex-direction: column; gap: clamp(8px, 1.5vh, 14px); width: 100%; height: 100%; transition: opacity 0.4s; }
         #pageWrapper.dimmed { opacity: 0; }
 
         /* Crystal Cards */
         .kiosk-card-route {
             background: var(--glass-card); border: 1px solid var(--glass-border);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border-radius: 16px; padding: 16px 24px; display: flex; align-items: center;
-            justify-content: space-between; gap: 20px; box-sizing: border-box;
+            border-radius: 16px; padding: clamp(12px, 2.5vh, 16px) clamp(16px, 3vw, 24px); 
+            display: flex; align-items: center; justify-content: space-between; gap: 20px; box-sizing: border-box;
         }
 
-        .route-ident-block { 
-            display: flex; align-items: center; gap: 24px; width: 55%; flex-shrink: 0; overflow: hidden; 
-        }
+        .route-ident-block { display: flex; align-items: center; gap: clamp(16px, 3vw, 24px); width: 55%; flex-shrink: 0; overflow: hidden; }
 
         .route-badge {
-            color: #ff3e3e; /* Company Color: KMB Red */
-            font-weight: 900; 
-            font-size: 4.5rem; /* Scaled down for better balance */
-            line-height: 0.9;
-            min-width: 120px; 
-            text-align: left; 
-            letter-spacing: -0.05em;
+            color: #ff3e3e; font-weight: 900; 
+            font-size: clamp(3rem, 8vw, 4.5rem); 
+            line-height: 0.9; min-width: clamp(80px, 10vw, 120px); 
+            text-align: left; letter-spacing: -0.05em;
             text-shadow: 0 0 15px rgba(255, 62, 62, 0.4), var(--text-glow);
-            white-space: nowrap;
-            flex-shrink: 0;
-            background: none;
-            padding: 0;
+            white-space: nowrap; flex-shrink: 0; background: none; padding: 0;
         }
 
         .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; width: 100%; text-shadow: var(--text-glow); }
-        .dest-tc { font-size: 2.2rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; line-height: 1.1; } 
-        .dest-en { font-size: 1.3rem; font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; line-height: 1.1; }
+        .dest-tc { font-size: clamp(1.4rem, 4vw, 2.2rem); font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; line-height: 1.1; } 
+        .dest-en { font-size: clamp(0.9rem, 2.5vw, 1.3rem); font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; line-height: 1.1; }
         .stop-spec-box { 
-            margin-top: 8px; padding: 6px 10px; background: rgba(0, 0, 0, 0.25); 
-            border-left: 4px solid #ffffff; font-size: 1.1rem; font-weight: 600; 
-            white-space: nowrap; text-overflow: ellipsis; overflow: hidden; border-radius: 0 6px 6px 0; 
+            margin-top: 4px; font-size: clamp(0.75rem, 2vw, 0.9rem); font-weight: 500; color: var(--text-sub);
+            white-space: nowrap; text-overflow: ellipsis; overflow: hidden; background: none; border-left: none; padding: 0; 
         }
 
         /* Timeline Nodes */
-        .arrivals-timeline { display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-grow: 1; }
+        .arrivals-timeline { display: flex; align-items: center; justify-content: flex-end; gap: clamp(8px, 2vw, 16px); flex-grow: 1; }
         .arrival-node { 
             background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border); 
-            border-radius: 12px; padding: 14px 16px; min-width: 130px; text-align: center; 
+            border-radius: 12px; padding: clamp(8px, 2vh, 14px) clamp(10px, 2vw, 16px); 
+            min-width: clamp(80px, 12vw, 130px); text-align: center; 
             display: flex; flex-direction: column; align-items: center;
         }
         
         .arrival-node:first-child { background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(52, 211, 153, 0.5); }
         .arrival-node.imminent { background: rgba(220, 38, 38, 0.35) !important; border: 1px solid rgba(248, 113, 113, 0.6) !important; animation: pulse 1.5s infinite; }
         
-        .node-mins { font-size: 1.6rem; font-weight: 700; white-space: nowrap; text-shadow: var(--text-glow); }
+        .node-mins { font-size: clamp(1.1rem, 3vw, 1.6rem); font-weight: 700; white-space: nowrap; text-shadow: var(--text-glow); }
         .arrival-node:first-child .node-mins { color: #34d399; }
         .arrival-node.imminent .node-mins { color: #f87171; }
         
-        .node-clock { font-size: 1.1rem; margin-top: 6px; font-weight: 700; letter-spacing: 0.02em; opacity: 0.95; text-shadow: var(--text-glow); }
+        .node-clock { font-size: clamp(0.8rem, 2vw, 1.1rem); margin-top: 6px; font-weight: 700; letter-spacing: 0.02em; opacity: 0.95; text-shadow: var(--text-glow); }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* Media Queries for Mobile/Tablets (Portrait) */
+        @media (max-width: 768px) {
+            .kiosk-card-route { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .route-ident-block { width: 100%; gap: 16px; }
+            .arrivals-timeline { width: 100%; justify-content: space-between; gap: 8px; }
+            .arrival-node { min-width: 0; flex: 1; padding: 10px 6px; }
+        }
     </style>
 </head>
 <body onclick="handleGlobalTap(event)">
@@ -164,13 +159,13 @@
     </div>
 
     <div id="settingsDrawer" class="settings-drawer" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0; font-weight: 600;">Kiosk Dashboard Image Center</h3>
+        <h3 style="margin-top:0; font-weight: 600;">Dashboard Settings</h3>
         <p style="font-size:0.85rem; color:var(--text-sub); margin-top:-8px; font-weight: 400;">
-            Select photos to construct a rotating background loop. Stored securely inside browser IndexedDB database to support heavy files.
+            Select photos to construct a background loop (Stored locally).
         </p>
-        <div style="display:flex; gap:12px; align-items:center;">
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
             <button onclick="document.getElementById('photoInput').click()" style="background:#16a34a; font-weight:600; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer;">
-                📷 Choose Photos (No Size Limit)
+                📷 Choose Photos
             </button>
             <input type="file" id="photoInput" multiple accept="image/*" style="display:none;">
             <button onclick="clearCustomPhotos()" style="background:#ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer; font-weight:500;">Reset to Default</button>
@@ -187,6 +182,14 @@
     </div>
 
 <script>
+    // --- PWA Service Worker Injection ---
+    // This allows Android/Desktop Chrome to trigger the native "Install App" prompt
+    if ('serviceWorker' in navigator) {
+        const swCode = `self.addEventListener('fetch', () => {});`;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+
     let wakeLockInstance = null;
     let refreshCountdown = 60;
     let bgIndex = 0;
@@ -202,7 +205,7 @@
 
     let compiledRouteArray = [];
     let currentPageIndex = 0;
-    let itemsPerPage = 3; 
+    let itemsPerPage = 3; // Dynamically updated based on screen height
     let autoPageRotationInterval = null;
     const TIME_PER_PAGE_MS = 8000; 
 
@@ -220,14 +223,24 @@
         acquireDeviceLocation();
 
         setInterval(refreshETAs, 60000);
-        setInterval(updateSyncCountdown, 1000);
         
         window.addEventListener('resize', () => {
             if(compiledRouteArray.length > 0) {
+                calculateDynamicItemsPerPage();
                 renderActivePage();
             }
         });
     });
+
+    // Dynamically calculate how many rows fit based on the screen's height
+    function calculateDynamicItemsPerPage() {
+        const grid = document.getElementById('dashboardGrid');
+        if (!grid) return;
+        const availableHeight = grid.clientHeight;
+        const estimatedCardHeight = window.innerWidth <= 768 ? 160 : 130; 
+        let calc = Math.floor(availableHeight / estimatedCardHeight);
+        itemsPerPage = calc < 1 ? 1 : calc;
+    }
 
     function initIndexedDBEngine() {
         return new Promise((resolve) => {
@@ -368,7 +381,7 @@
     function toggleSettingsDrawer() {
         const drawer = document.getElementById('settingsDrawer');
         drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
-        renderActivePage();
+        if (compiledRouteArray.length > 0) renderActivePage();
     }
 
     async function requestWakeLock() {
@@ -410,6 +423,7 @@
             });
 
             localStopIds = nearby.map(s => s.stop);
+            calculateDynamicItemsPerPage();
             await fetchAndAggregateRouteFeeds();
         } catch (e) {
             document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:#f87171;">System Offline.</div>`;
@@ -570,10 +584,6 @@
     }
 
     function refreshETAs() { fetchAndAggregateRouteFeeds(); refreshCountdown = 60; }
-    function updateSyncCountdown() {
-        refreshCountdown--;
-        if (refreshCountdown < 0) refreshCountdown = 59;
-    }
 </script>
 </body>
 </html>
