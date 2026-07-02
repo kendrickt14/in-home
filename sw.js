@@ -1,4 +1,4 @@
-// Minimal Service Worker to satisfy Android Chrome PWA requirements
+// Version: 1.0.1
 self.addEventListener('install', (e) => {
     self.skipWaiting();
 });
