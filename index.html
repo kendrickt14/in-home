@@ -112,7 +112,7 @@
         #centerLiveTime { font-size: clamp(5rem, 15vw, 9rem); font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
         #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; opacity: 0.9; margin-top: 10px; }
         #centerWeatherIcon { 
-            width: clamp(20px, 3.75vw, 38px); /* Exactly 75% smaller than the previous layout */
+            width: clamp(20px, 3.75vw, 38px); /* Mathematically 75% smaller */
             margin-top: 20px; 
             display: none; 
         }
@@ -275,14 +275,14 @@
         "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80"
     ];
 
-    // Warning Code Mapping based on official HKO URL structures
+    // Official HKO Warning Codes mapped to their GIF filenames
     const warnMap = {
         'WFIREY': 'firey', 'WFIRER': 'firer',
         'WRAINA': 'wraina', 'WRAINR': 'wrainr', 'WRAINB': 'wrainb',
         'TC1': 'tc1', 'TC3': 'tc3', 'TC8NE': 'tc8ne', 'TC8NW': 'tc8nw', 
         'TC8SE': 'tc8se', 'TC8SW': 'tc8sw', 'TC9': 'tc9', 'TC10': 'tc10',
         'WCOLD': 'cold', 'WHOT': 'vhot', 'WFROST': 'frost',
-        'WL': 'landslip', 'WTS': 'ts', 'WSMS': 'sms', 'WTCSW': 'tcsw'
+        'WL': 'landslip', 'WTS': 'ts', 'WMSGNL': 'sms', 'WTCSW': 'tcsw'
     };
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -354,8 +354,11 @@
                 Object.keys(warnRes).forEach(key => {
                     const warn = warnRes[key];
                     if (warn && warn.name) {
+                        // Crucial fix: Extract the specific signal code if nested (e.g. TC1 instead of WTCSGNL)
+                        const actualCode = warn.code || key; 
+                        
                         const img = document.createElement('img');
-                        const iconName = warnMap[key] || key.toLowerCase();
+                        const iconName = warnMap[actualCode] || actualCode.toLowerCase();
                         img.src = `https://www.hko.gov.hk/tc/wxinfo/dailywx/images/${iconName}.gif`;
                         img.style.height = '36px';
                         img.style.width = 'auto';
