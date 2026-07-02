@@ -6,10 +6,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#04070d">
-    <title>HK Bus Crystal Route Dashboard</title>
+    <title>HK Bus Crystal Dashboard</title>
 
-    <!-- Embedded Web App Manifest for Native "Install App" functionality -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiSEsgQnVzIENyeXN0YWwgRGFzaGJvYXJkIiwic2hvcnRfbmFtZSI6IkJ1cyBEYXNoIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwNDA3MGQiLCJ0aGVtZV9jb2xvciI6IiMwNDA3MGQiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2NoYXJzZXQ9dXRmLTgsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnJTNFLTNDcmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nJTIzZmYzZTNlJy8lM0UlM0N0ZXh0IHg9JzUwJyB5PSc1MCcgZmlsbD0nd2hpdGUnIGZvbnQtc2l6ZT0nNDAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGR5PScuM2VtJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZiclM0VCJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+    <link rel="manifest" href="manifest.json">
 
     <style>
         :root {
@@ -24,6 +23,8 @@
 
         * { -webkit-tap-highlight-color: transparent; }
 
+        html { font-size: 16px; transition: font-size 0.3s ease; }
+
         html, body { 
             margin: 0; padding: 0; 
             height: 100dvh; width: 100vw; 
@@ -33,7 +34,7 @@
 
         body {
             font-family: var(--sans-serif-stack);
-            padding: clamp(12px, 3vw, 24px);
+            padding: 24px;
             box-sizing: border-box;
             color: var(--text-main);
             background-color: var(--bg-base);
@@ -55,93 +56,111 @@
             z-index: -1; 
         }
 
-        /* Top Bar HUD */
+        /* HUD */
         .dashboard-header {
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: clamp(10px, 2vh, 20px);
-            padding-bottom: clamp(8px, 1.5vh, 16px);
+            margin-bottom: 20px; padding-bottom: 16px;
             border-bottom: 1px solid var(--glass-border);
             text-shadow: var(--text-glow);
             flex-shrink: 0;
+            transition: opacity 0.4s;
         }
         
-        .clock-box { display: flex; flex-direction: column; }
-        #liveTime { font-size: clamp(2.5rem, 6vw, 3.5rem); font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
-        #liveDate { font-size: clamp(0.85rem, 2vw, 1rem); font-weight: 600; margin-top: 6px; letter-spacing: 0.02em; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .weather-box {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--glass-card); padding: 8px 16px; border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        #weatherIcon { width: 36px; height: 36px; display: none; }
+        #temperature { font-size: 1.5rem; font-weight: 700; }
+        #weatherWarnings { display: flex; flex-direction: row; align-items: center; gap: 6px; }
 
         .settings-btn {
             background: transparent; border: none; color: var(--text-main);
-            font-size: clamp(1.5rem, 4vw, 2rem); cursor: pointer;
-            opacity: 0.5; transition: opacity 0.2s;
-            position: relative; z-index: 10;
+            font-size: 1.8rem; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
         }
         .settings-btn:hover { opacity: 1; }
 
         .settings-drawer {
             background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-            border-radius: 12px; padding: 16px; margin-bottom: 24px; display: none;
-            position: relative; z-index: 10; max-height: 50vh; overflow-y: auto;
+            backdrop-filter: blur(20px); border-radius: 12px; padding: 20px; display: none;
+            position: absolute; top: 80px; right: 24px; z-index: 100; width: 320px;
         }
 
-        /* Display Grid */
-        .grid-layout { flex-grow: 1; display: flex; flex-direction: column; gap: clamp(8px, 1.5vh, 14px); overflow: hidden; position: relative; }
-        #pageWrapper { display: flex; flex-direction: column; gap: clamp(8px, 1.5vh, 14px); width: 100%; height: 100%; transition: opacity 0.4s; }
+        .layout-btn {
+            background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border);
+            padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; flex: 1;
+        }
+        .layout-btn.active { background: #3b82f6; border-color: #60a5fa; }
+
+        /* Main Content Area */
+        .grid-layout { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        #pageWrapper { display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; transition: opacity 0.4s; }
         #pageWrapper.dimmed { opacity: 0; }
 
-        /* Crystal Cards */
+        /* Center Time Page */
+        #centerTimePage {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; text-shadow: var(--text-glow); text-align: center;
+            transition: opacity 0.4s;
+        }
+        #centerTimePage.dimmed { opacity: 0; }
+        
+        #centerLiveTime { font-size: clamp(5rem, 15vw, 9rem); font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+        #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; opacity: 0.9; margin-top: 10px; }
+        #centerWeatherIcon { 
+            width: clamp(20px, 3.75vw, 38px); /* Exactly 75% smaller than the previous layout */
+            margin-top: 20px; 
+            display: none; 
+        }
+
+        /* Bus Cards */
         .kiosk-card-route {
             background: var(--glass-card); border: 1px solid var(--glass-border);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border-radius: 16px; padding: clamp(12px, 2.5vh, 16px) clamp(16px, 3vw, 24px); 
-            display: flex; align-items: center; justify-content: space-between; gap: 20px; box-sizing: border-box;
+            backdrop-filter: blur(16px); border-radius: 16px; padding: 1.2rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 20px;
         }
 
-        .route-ident-block { display: flex; align-items: center; gap: clamp(16px, 3vw, 24px); width: 55%; flex-shrink: 0; overflow: hidden; }
-
+        .route-ident-block { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
         .route-badge {
-            color: #ff3e3e; font-weight: 900; 
-            font-size: clamp(3rem, 8vw, 4.5rem); 
-            line-height: 0.9; min-width: clamp(80px, 10vw, 120px); 
-            text-align: left; letter-spacing: -0.05em;
-            text-shadow: 0 0 15px rgba(255, 62, 62, 0.4), var(--text-glow);
-            white-space: nowrap; flex-shrink: 0; background: none; padding: 0;
+            font-weight: 900; font-size: 3.5rem; line-height: 0.9;
+            min-width: 100px; padding: 0; background: none;
         }
 
-        .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; width: 100%; text-shadow: var(--text-glow); }
-        .dest-tc { font-size: clamp(1.4rem, 4vw, 2.2rem); font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; line-height: 1.1; } 
-        .dest-en { font-size: clamp(0.9rem, 2.5vw, 1.3rem); font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; line-height: 1.1; }
-        .stop-spec-box { 
-            margin-top: 4px; font-size: clamp(0.75rem, 2vw, 0.9rem); font-weight: 500; color: var(--text-sub);
-            white-space: nowrap; text-overflow: ellipsis; overflow: hidden; background: none; border-left: none; padding: 0; 
-        }
+        .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+        .dest-tc { font-size: 1.6rem; font-weight: 700; white-space: nowrap; } 
+        .dest-en { font-size: 1rem; opacity: 0.85; white-space: nowrap; }
+        .stop-spec-box { margin-top: 4px; font-size: 0.85rem; color: var(--text-sub); }
 
-        /* Timeline Nodes */
-        .arrivals-timeline { display: flex; align-items: center; justify-content: flex-end; gap: clamp(8px, 2vw, 16px); flex-grow: 1; }
+        /* Scrollable Timeline */
+        .arrivals-timeline { 
+            display: flex; align-items: center; gap: 12px; 
+            overflow-x: auto; padding: 10px 0; -webkit-overflow-scrolling: touch; 
+        }
         .arrival-node { 
             background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border); 
-            border-radius: 12px; padding: clamp(8px, 2vh, 14px) clamp(10px, 2vw, 16px); 
-            min-width: clamp(80px, 12vw, 130px); text-align: center; 
-            display: flex; flex-direction: column; align-items: center;
+            border-radius: 12px; padding: 12px; min-width: 100px; text-align: center;
         }
         
         .arrival-node:first-child { background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(52, 211, 153, 0.5); }
         .arrival-node.imminent { background: rgba(220, 38, 38, 0.35) !important; border: 1px solid rgba(248, 113, 113, 0.6) !important; animation: pulse 1.5s infinite; }
-        
-        .node-mins { font-size: clamp(1.1rem, 3vw, 1.6rem); font-weight: 700; white-space: nowrap; text-shadow: var(--text-glow); }
+
+        .node-mins { font-size: 1.2rem; font-weight: 700; text-shadow: var(--text-glow); }
         .arrival-node:first-child .node-mins { color: #34d399; }
         .arrival-node.imminent .node-mins { color: #f87171; }
-        
-        .node-clock { font-size: clamp(0.8rem, 2vw, 1.1rem); margin-top: 6px; font-weight: 700; letter-spacing: 0.02em; opacity: 0.95; text-shadow: var(--text-glow); }
+        .node-clock { font-size: 0.8rem; margin-top: 4px; font-weight: 700; opacity: 0.95; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* Media Queries for Mobile/Tablets (Portrait) */
         @media (max-width: 768px) {
             .kiosk-card-route { flex-direction: column; align-items: flex-start; gap: 12px; }
             .route-ident-block { width: 100%; gap: 16px; }
-            .arrivals-timeline { width: 100%; justify-content: space-between; gap: 8px; }
-            .arrival-node { min-width: 0; flex: 1; padding: 10px 6px; }
+            .arrivals-timeline { width: 100%; justify-content: flex-start; }
+            .dashboard-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .header-right { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
@@ -150,48 +169,90 @@
     <div class="bg-slide-container" id="bgSlideContainer"></div>
     <div class="bg-overlay"></div>
 
-    <div class="dashboard-header" onclick="event.stopPropagation()">
+    <div class="dashboard-header" id="mainHeader" onclick="event.stopPropagation()">
         <div class="clock-box">
             <div id="liveTime">00:00</div>
             <div id="liveDate">Loading...</div>
         </div>
-        <button class="settings-btn" onclick="toggleSettingsDrawer()">⚙️</button>
+        <div class="header-right">
+            <button id="installBtn" class="settings-btn" style="display:none;" title="Install Dashboard">📲</button>
+            <div class="weather-box">
+                <div id="weatherWarnings"></div>
+                <img id="weatherIcon" src="">
+                <div id="temperature">--°C</div>
+            </div>
+            <button class="settings-btn" onclick="toggleSettingsDrawer()">⚙️</button>
+        </div>
     </div>
 
     <div id="settingsDrawer" class="settings-drawer" onclick="event.stopPropagation()">
         <h3 style="margin-top:0; font-weight: 600;">Dashboard Settings</h3>
-        <p style="font-size:0.85rem; color:var(--text-sub); margin-top:-8px; font-weight: 400;">
-            Select photos to construct a background loop (Stored locally).
-        </p>
-        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+        
+        <div style="margin-bottom: 20px;">
+            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Layout Size</p>
+            <div style="display:flex; gap: 8px;">
+                <button id="btnSizeSmall" onclick="setLayoutSize('small')" class="layout-btn">Small</button>
+                <button id="btnSizeMedium" onclick="setLayoutSize('medium')" class="layout-btn">Med</button>
+                <button id="btnSizeLarge" onclick="setLayoutSize('large')" class="layout-btn">Large</button>
+            </div>
+        </div>
+
+        <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Background Loop</p>
+        <div style="display:flex; gap:12px; align-items:center;">
             <button onclick="document.getElementById('photoInput').click()" style="background:#16a34a; font-weight:600; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer;">
-                📷 Choose Photos
+                📷 Choose
             </button>
             <input type="file" id="photoInput" multiple accept="image/*" style="display:none;">
-            <button onclick="clearCustomPhotos()" style="background:#ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer; font-weight:500;">Reset to Default</button>
+            <button onclick="clearCustomPhotos()" style="background:#ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer; font-weight:500;">Reset</button>
         </div>
         <div id="uploadStatusText" style="margin-top:10px; font-size:0.85rem; color:#16a34a; font-weight: 500;"></div>
     </div>
 
     <div class="grid-layout" id="dashboardGrid">
+        
+        <!-- Center Date/Time Page -->
+        <div id="centerTimePage">
+            <div id="centerLiveTime">00:00</div>
+            <div id="centerLiveDate">Loading...</div>
+            <img id="centerWeatherIcon" src="">
+        </div>
+
+        <!-- Bus Route Page Wrapper -->
         <div id="pageWrapper">
             <div style="text-align: center; padding: 40px; color: var(--text-main); font-weight: 600; text-shadow: var(--text-glow);">
                 Aggregating routes based on location coordinates. Please verify your browser GPS prompt...
             </div>
         </div>
+
     </div>
 
 <script>
-    // --- PWA Service Worker Injection ---
-    // This allows Android/Desktop Chrome to trigger the native "Install App" prompt
+    // --- PWA Installation Logic ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') installBtn.style.display = 'none';
+                deferredPrompt = null;
+            });
+        }
+    });
+
     if ('serviceWorker' in navigator) {
-        const swCode = `self.addEventListener('fetch', () => {});`;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration failed', err));
     }
 
+    // --- App Logic ---
     let wakeLockInstance = null;
-    let refreshCountdown = 60;
     let bgIndex = 0;
     let slideshowIntervalId = null;
     let userLat = null;
@@ -204,21 +265,37 @@
     let localStopIds = [];
 
     let compiledRouteArray = [];
-    let currentPageIndex = 0;
-    let itemsPerPage = 3; // Dynamically updated based on screen height
+    let currentPageIndex = 0; 
+    let itemsPerPage = 3; 
     let autoPageRotationInterval = null;
     const TIME_PER_PAGE_MS = 8000; 
 
     const fallbackPhotos = [
         "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80"
+        "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80"
     ];
 
+    // Warning Code Mapping based on official HKO URL structures
+    const warnMap = {
+        'WFIREY': 'firey', 'WFIRER': 'firer',
+        'WRAINA': 'wraina', 'WRAINR': 'wrainr', 'WRAINB': 'wrainb',
+        'TC1': 'tc1', 'TC3': 'tc3', 'TC8NE': 'tc8ne', 'TC8NW': 'tc8nw', 
+        'TC8SE': 'tc8se', 'TC8SW': 'tc8sw', 'TC9': 'tc9', 'TC10': 'tc10',
+        'WCOLD': 'cold', 'WHOT': 'vhot', 'WFROST': 'frost',
+        'WL': 'landslip', 'WTS': 'ts', 'WSMS': 'sms', 'WTCSW': 'tcsw'
+    };
+
     window.addEventListener('DOMContentLoaded', async () => {
+        const savedSize = localStorage.getItem('layoutSize') || 'medium';
+        setLayoutSize(savedSize);
+
         initClockAndDateLabels();
         await initIndexedDBEngine();
         await loadAndRenderBackgroundSlideshow();
+        
+        fetchHKOWeather(); 
+        setInterval(fetchHKOWeather, 600000); 
+
         requestWakeLock();
         acquireDeviceLocation();
 
@@ -232,7 +309,93 @@
         });
     });
 
-    // Dynamically calculate how many rows fit based on the screen's height
+    // --- Layout Size Logic ---
+    function setLayoutSize(size) {
+        const root = document.documentElement;
+        document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
+        
+        if(size === 'small') { root.style.fontSize = '12px'; document.getElementById('btnSizeSmall').classList.add('active'); }
+        else if(size === 'large') { root.style.fontSize = '20px'; document.getElementById('btnSizeLarge').classList.add('active'); }
+        else { root.style.fontSize = '16px'; document.getElementById('btnSizeMedium').classList.add('active'); size = 'medium'; }
+        
+        localStorage.setItem('layoutSize', size);
+        
+        setTimeout(() => {
+            calculateDynamicItemsPerPage();
+            if(compiledRouteArray.length > 0) renderActivePage();
+        }, 350); 
+    }
+
+    // --- Weather & Clock ---
+    async function fetchHKOWeather() {
+        try {
+            const weatherRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r => r.json());
+            if (weatherRes.icon && weatherRes.icon.length > 0) {
+                const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${weatherRes.icon[0]}.png`;
+                
+                const headerIcon = document.getElementById('weatherIcon');
+                headerIcon.src = iconSrc;
+                headerIcon.style.display = 'block';
+
+                const centerIcon = document.getElementById('centerWeatherIcon');
+                centerIcon.src = iconSrc;
+                centerIcon.style.display = 'block';
+            }
+            if (weatherRes.temperature && weatherRes.temperature.data) {
+                const obsTemp = weatherRes.temperature.data.find(t => t.place === "香港天文台") || weatherRes.temperature.data[0];
+                if (obsTemp) document.getElementById('temperature').textContent = `${obsTemp.value}°C`;
+            }
+
+            const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r => r.json());
+            const warningContainer = document.getElementById('weatherWarnings');
+            warningContainer.innerHTML = ''; 
+
+            if (warnRes && Object.keys(warnRes).length > 0) {
+                Object.keys(warnRes).forEach(key => {
+                    const warn = warnRes[key];
+                    if (warn && warn.name) {
+                        const img = document.createElement('img');
+                        const iconName = warnMap[key] || key.toLowerCase();
+                        img.src = `https://www.hko.gov.hk/tc/wxinfo/dailywx/images/${iconName}.gif`;
+                        img.style.height = '36px';
+                        img.style.width = 'auto';
+                        img.title = warn.name;
+                        
+                        // Fallback to text if the image fails to load
+                        img.onerror = function() {
+                            this.style.display = 'none';
+                            const span = document.createElement('span');
+                            span.textContent = warn.name;
+                            span.style.color = '#fca5a5';
+                            span.style.fontSize = '0.8rem';
+                            warningContainer.appendChild(span);
+                        };
+                        warningContainer.appendChild(img);
+                    }
+                });
+            }
+        } catch (e) { console.error("Weather error:", e); }
+    }
+
+    function initClockAndDateLabels() {
+        const update = () => {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            const tcDate = now.toLocaleDateString('zh-HK', {year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'});
+            const enDate = now.toLocaleDateString('en-US', {month: 'short', day: 'numeric', weekday: 'long'});
+            const dateString = `${tcDate} | ${enDate}`;
+
+            document.getElementById('liveTime').textContent = timeString;
+            document.getElementById('centerLiveTime').textContent = timeString;
+            
+            document.getElementById('liveDate').textContent = dateString;
+            document.getElementById('centerLiveDate').textContent = dateString;
+        };
+        update();
+        setInterval(update, 1000);
+    }
+
+    // --- Core Aggregation Logic ---
     function calculateDynamicItemsPerPage() {
         const grid = document.getElementById('dashboardGrid');
         if (!grid) return;
@@ -242,6 +405,215 @@
         itemsPerPage = calc < 1 ? 1 : calc;
     }
 
+    function acquireDeviceLocation() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+            await findNearbyStops();
+        }, null, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; 
+        const phi1 = lat1 * Math.PI/180; const phi2 = lat2 * Math.PI/180;
+        const deltaPhi = (lat2-lat1) * Math.PI/180; const deltaLambda = (lon2-lon1) * Math.PI/180;
+        return R * 2 * Math.atan2(Math.sqrt(Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2)), Math.sqrt(1-(Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2))));
+    }
+
+    async function findNearbyStops() {
+        try {
+            const res = await fetch("https://data.etabus.gov.hk/v1/transport/kmb/stop").then(r => r.json());
+            const allStops = res.data || [];
+            cachedStopMetadataMap = {};
+
+            const nearby = allStops.filter(stop => {
+                const dist = getDistance(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
+                if (dist <= 350) {
+                    cachedStopMetadataMap[stop.stop] = { name_tc: stop.name_tc, name_en: stop.name_en, distance: dist };
+                    return true;
+                }
+                return false;
+            });
+
+            localStopIds = nearby.map(s => s.stop);
+            calculateDynamicItemsPerPage();
+            await fetchAndAggregateRouteFeeds();
+        } catch (e) {
+            document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:#f87171;">System Offline.</div>`;
+        }
+    }
+
+    async function fetchAndAggregateRouteFeeds() {
+        if (localStopIds.length === 0) {
+            document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:var(--text-main); font-weight:600; text-shadow:var(--text-glow);">No bus stations found within 350 meters.</div>`;
+            return;
+        }
+
+        const aggregatedRoutes = {};
+        const uniqueRouteBoundClosestDistances = {};
+
+        const fetchPromises = localStopIds.map(async (stopId) => {
+            try {
+                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`).then(r => r.json());
+                const items = res.data || [];
+
+                items.forEach(item => {
+                    if (!item.eta) return;
+                    
+                    const companyId = item.co || "KMB";
+                    const routeBoundKey = `${companyId}_${item.route}_${item.dir}`;
+                    const currentStopDistance = cachedStopMetadataMap[stopId]?.distance || 99999;
+
+                    if (uniqueRouteBoundClosestDistances[routeBoundKey] !== undefined && uniqueRouteBoundClosestDistances[routeBoundKey] < currentStopDistance) return;
+
+                    if (uniqueRouteBoundClosestDistances[routeBoundKey] !== undefined && uniqueRouteBoundClosestDistances[routeBoundKey] > currentStopDistance) {
+                        for (const key in aggregatedRoutes) {
+                            if (key.startsWith(routeBoundKey + "_")) delete aggregatedRoutes[key];
+                        }
+                    }
+
+                    uniqueRouteBoundClosestDistances[routeBoundKey] = currentStopDistance;
+                    const finalStorageKey = `${routeBoundKey}_${stopId}`;
+
+                    if (!aggregatedRoutes[finalStorageKey]) {
+                        aggregatedRoutes[finalStorageKey] = {
+                            company: companyId, route: item.route, dest_tc: item.dest_tc, dest_en: item.dest_en,
+                            stopId: stopId, stopDistance: currentStopDistance,
+                            stopNameTc: cachedStopMetadataMap[stopId]?.name_tc || "未知站點",
+                            stopNameEn: cachedStopMetadataMap[stopId]?.name_en || "Unknown Stop",
+                            arrivals: []
+                        };
+                    }
+
+                    if (!aggregatedRoutes[finalStorageKey].arrivals.some(a => a.eta === item.eta)) {
+                        aggregatedRoutes[finalStorageKey].arrivals.push({ eta: item.eta, rmk: item.rmk_tc });
+                    }
+                });
+            } catch (e) {}
+        });
+
+        await Promise.all(fetchPromises);
+
+        compiledRouteArray = Object.values(aggregatedRoutes).map(line => {
+            line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta));
+            return line;
+        }).sort((a, b) => a.stopDistance - b.stopDistance);
+
+        currentPageIndex = 0; 
+        renderActivePage();
+        initAutoPaginationTimer();
+    }
+
+    // --- Page Rendering & Transitions ---
+    function renderActivePage() {
+        const wrapper = document.getElementById('pageWrapper');
+        const centerPage = document.getElementById('centerTimePage');
+        const mainHeader = document.getElementById('mainHeader');
+
+        if (compiledRouteArray.length === 0) {
+            centerPage.style.display = 'none';
+            wrapper.style.display = 'flex';
+            wrapper.innerHTML = `<div style="text-align:center; color:var(--text-main); font-weight:600; text-shadow:var(--text-glow); padding:20px;">No operational route timetables available.</div>`;
+            return;
+        }
+
+        const totalPages = Math.ceil(compiledRouteArray.length / itemsPerPage) + 1;
+        if (currentPageIndex >= totalPages) currentPageIndex = 0;
+
+        if (currentPageIndex === 0) {
+            wrapper.style.display = 'none';
+            centerPage.style.display = 'flex';
+            mainHeader.style.opacity = '0'; 
+            return;
+        }
+
+        centerPage.style.display = 'none';
+        wrapper.style.display = 'flex';
+        mainHeader.style.opacity = '1'; 
+        wrapper.innerHTML = '';
+
+        const startIndex = (currentPageIndex - 1) * itemsPerPage;
+        const pageItems = compiledRouteArray.slice(startIndex, startIndex + itemsPerPage);
+
+        pageItems.forEach(line => {
+            const card = document.createElement('div');
+            card.className = 'kiosk-card-route';
+
+            const badgeColor = line.company === 'LWB' ? '#ff9f43' : '#ff4757';
+            const badgeGlow = line.company === 'LWB' ? 'rgba(255, 159, 67, 0.4)' : 'rgba(255, 71, 87, 0.4)';
+
+            let identHtml = `
+                <div class="route-ident-block">
+                    <div class="route-badge" style="color: ${badgeColor}; text-shadow: 0 0 15px ${badgeGlow}, var(--text-glow);">${line.route}</div>
+                    <div class="dest-col">
+                        <div class="dest-tc">往 ${line.dest_tc}</div>
+                        <div class="dest-en">To ${line.dest_en}</div>
+                        <div class="stop-spec-box">${line.stopNameTc} (${line.stopNameEn})</div>
+                    </div>
+                </div>
+            `;
+
+            let timelineHtml = `<div class="arrivals-timeline">`;
+            const activeArrivals = line.arrivals.slice(0, 3);
+
+            if (activeArrivals.length === 0) {
+                timelineHtml += `<div style="color:var(--text-main); font-size:1.1rem; font-style:italic; font-weight:700; text-shadow:var(--text-glow);">No departures scheduled</div>`;
+            } else {
+                activeArrivals.forEach((arrival, idx) => {
+                    const diff = Math.max(0, Math.floor((new Date(arrival.eta) - new Date()) / 1000 / 60));
+                    const displayClock = new Date(arrival.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    
+                    let nodeClass = "arrival-node";
+                    if (idx === 0 && diff <= 3) nodeClass += " imminent";
+                    const minuteString = diff === 0 ? "到站中 / Arriving" : `${diff} 分鐘 / min`;
+
+                    timelineHtml += `
+                        <div class="${nodeClass}">
+                            <span class="node-mins">${minuteString}</span>
+                            <span class="node-clock">${displayClock}</span>
+                        </div>
+                    `;
+                });
+            }
+            timelineHtml += `</div>`;
+            card.innerHTML = identHtml + timelineHtml;
+            wrapper.appendChild(card);
+        });
+    }
+
+    function transitionToNextPage(targetIndex = null) {
+        const wrapper = document.getElementById('pageWrapper');
+        const centerPage = document.getElementById('centerTimePage');
+        const totalPages = compiledRouteArray.length > 0 ? Math.ceil(compiledRouteArray.length / itemsPerPage) + 1 : 1;
+        if (totalPages <= 1) return; 
+
+        wrapper.classList.add('dimmed'); 
+        centerPage.classList.add('dimmed');
+
+        setTimeout(() => {
+            currentPageIndex = targetIndex !== null ? targetIndex : (currentPageIndex + 1) % totalPages;
+            renderActivePage();
+            wrapper.classList.remove('dimmed'); 
+            centerPage.classList.remove('dimmed');
+        }, 400);
+    }
+
+    function initAutoPaginationTimer() {
+        if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
+        const totalPages = compiledRouteArray.length > 0 ? Math.ceil(compiledRouteArray.length / itemsPerPage) + 1 : 1;
+        if (totalPages <= 1) return;
+        autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
+    }
+
+    function handleGlobalTap(event) {
+        if (compiledRouteArray.length === 0) return;
+        initAutoPaginationTimer();
+        transitionToNextPage();
+    }
+
+    function refreshETAs() { fetchAndAggregateRouteFeeds(); }
+    
+    // --- Database & Slideshow Logic ---
     function initIndexedDBEngine() {
         return new Promise((resolve) => {
             const request = indexedDB.open("BusKioskDashboardDB", 1);
@@ -289,18 +661,6 @@
         });
     }
 
-    function initClockAndDateLabels() {
-        const update = () => {
-            const now = new Date();
-            document.getElementById('liveTime').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-            const tcDate = now.toLocaleDateString('zh-HK', {year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'});
-            const enDate = now.toLocaleDateString('en-US', {month: 'short', day: 'numeric', weekday: 'long'});
-            document.getElementById('liveDate').textContent = `${tcDate} | ${enDate}`;
-        };
-        update();
-        setInterval(update, 1000);
-    }
-
     async function loadAndRenderBackgroundSlideshow() {
         const container = document.getElementById('bgSlideContainer');
         container.innerHTML = ''; 
@@ -331,7 +691,6 @@
         });
 
         bgIndex = 0;
-
         slideshowIntervalId = setInterval(() => {
             const slides = document.querySelectorAll('.bg-slide');
             if(slides.length <= 1) return;
@@ -381,209 +740,11 @@
     function toggleSettingsDrawer() {
         const drawer = document.getElementById('settingsDrawer');
         drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
-        if (compiledRouteArray.length > 0) renderActivePage();
     }
 
     async function requestWakeLock() {
         try { if ('wakeLock' in navigator) wakeLockInstance = await navigator.wakeLock.request('screen'); } catch (e) {}
     }
-
-    function acquireDeviceLocation() {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            userLat = pos.coords.latitude; userLng = pos.coords.longitude;
-            await findNearbyStops();
-        }, null, { enableHighAccuracy: true, timeout: 10000 });
-    }
-
-    function getDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const phi1 = lat1 * Math.PI/180; const phi2 = lat2 * Math.PI/180;
-        const deltaPhi = (lat2-lat1) * Math.PI/180; const deltaLambda = (lon2-lon1) * Math.PI/180;
-        return R * 2 * Math.atan2(Math.sqrt(Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2)), Math.sqrt(1-(Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2))));
-    }
-
-    async function findNearbyStops() {
-        try {
-            const res = await fetch("https://data.etabus.gov.hk/v1/transport/kmb/stop").then(r => r.json());
-            const allStops = res.data || [];
-            cachedStopMetadataMap = {};
-
-            const nearby = allStops.filter(stop => {
-                const dist = getDistance(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
-                if (dist <= 350) {
-                    cachedStopMetadataMap[stop.stop] = {
-                        name_tc: stop.name_tc,
-                        name_en: stop.name_en,
-                        distance: dist
-                    };
-                    return true;
-                }
-                return false;
-            });
-
-            localStopIds = nearby.map(s => s.stop);
-            calculateDynamicItemsPerPage();
-            await fetchAndAggregateRouteFeeds();
-        } catch (e) {
-            document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:#f87171;">System Offline.</div>`;
-        }
-    }
-
-    async function fetchAndAggregateRouteFeeds() {
-        if (localStopIds.length === 0) {
-            document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:var(--text-main); font-weight:600; text-shadow:var(--text-glow);">No bus stations found within 350 meters.</div>`;
-            return;
-        }
-
-        const aggregatedRoutes = {};
-        const uniqueRouteBoundClosestDistances = {};
-
-        const fetchPromises = localStopIds.map(async (stopId) => {
-            try {
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`).then(r => r.json());
-                const items = res.data || [];
-
-                items.forEach(item => {
-                    if (!item.eta) return;
-                    
-                    const routeBoundKey = `${item.route}_${item.dir}`;
-                    const currentStopDistance = cachedStopMetadataMap[stopId]?.distance || 99999;
-
-                    if (uniqueRouteBoundClosestDistances[routeBoundKey] !== undefined && uniqueRouteBoundClosestDistances[routeBoundKey] < currentStopDistance) {
-                        return;
-                    }
-
-                    if (uniqueRouteBoundClosestDistances[routeBoundKey] !== undefined && uniqueRouteBoundClosestDistances[routeBoundKey] > currentStopDistance) {
-                        for (const key in aggregatedRoutes) {
-                            if (key.startsWith(routeBoundKey + "_")) {
-                                delete aggregatedRoutes[key];
-                            }
-                        }
-                    }
-
-                    uniqueRouteBoundClosestDistances[routeBoundKey] = currentStopDistance;
-                    const finalStorageKey = `${routeBoundKey}_${stopId}`;
-
-                    if (!aggregatedRoutes[finalStorageKey]) {
-                        aggregatedRoutes[finalStorageKey] = {
-                            route: item.route,
-                            dest_tc: item.dest_tc,
-                            dest_en: item.dest_en,
-                            stopId: stopId,
-                            stopDistance: currentStopDistance,
-                            stopNameTc: cachedStopMetadataMap[stopId]?.name_tc || "未知站點",
-                            stopNameEn: cachedStopMetadataMap[stopId]?.name_en || "Unknown Stop",
-                            arrivals: []
-                        };
-                    }
-
-                    if (!aggregatedRoutes[finalStorageKey].arrivals.some(a => a.eta === item.eta)) {
-                        aggregatedRoutes[finalStorageKey].arrivals.push({ eta: item.eta, rmk: item.rmk_tc });
-                    }
-                });
-            } catch (e) {}
-        });
-
-        await Promise.all(fetchPromises);
-
-        compiledRouteArray = Object.values(aggregatedRoutes).map(line => {
-            line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta));
-            return line;
-        }).sort((a, b) => a.stopDistance - b.stopDistance);
-
-        currentPageIndex = 0; 
-        renderActivePage();
-        initAutoPaginationTimer();
-    }
-
-    function renderActivePage() {
-        const wrapper = document.getElementById('pageWrapper');
-        wrapper.innerHTML = '';
-
-        if (compiledRouteArray.length === 0) {
-            wrapper.innerHTML = `<div style="text-align:center; color:var(--text-main); font-weight:600; text-shadow:var(--text-glow); padding:20px;">No operational route timetables available.</div>`;
-            return;
-        }
-
-        const totalPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
-        if (currentPageIndex >= totalPages) currentPageIndex = 0;
-
-        const startIndex = currentPageIndex * itemsPerPage;
-        const pageItems = compiledRouteArray.slice(startIndex, startIndex + itemsPerPage);
-
-        pageItems.forEach(line => {
-            const card = document.createElement('div');
-            card.className = 'kiosk-card-route';
-
-            let identHtml = `
-                <div class="route-ident-block">
-                    <div class="route-badge">${line.route}</div>
-                    <div class="dest-col">
-                        <div class="dest-tc">往 ${line.dest_tc}</div>
-                        <div class="dest-en">To ${line.dest_en}</div>
-                        <div class="stop-spec-box">
-                            ${line.stopNameTc} (${line.stopNameEn})
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            let timelineHtml = `<div class="arrivals-timeline">`;
-            const activeArrivals = line.arrivals.slice(0, 3);
-
-            if (activeArrivals.length === 0) {
-                timelineHtml += `<div style="color:var(--text-main); font-size:1.1rem; font-style:italic; font-weight:700; text-shadow:var(--text-glow);">No departures scheduled</div>`;
-            } else {
-                activeArrivals.forEach((arrival, idx) => {
-                    const diff = Math.max(0, Math.floor((new Date(arrival.eta) - new Date()) / 1000 / 60));
-                    const displayClock = new Date(arrival.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    
-                    let nodeClass = "arrival-node";
-                    if (idx === 0 && diff <= 3) nodeClass += " imminent";
-                    const minuteString = diff === 0 ? "到站中 / Arriving" : `${diff} 分鐘 / min`;
-
-                    timelineHtml += `
-                        <div class="${nodeClass}">
-                            <span class="node-mins">${minuteString}</span>
-                            <span class="node-clock">${displayClock}</span>
-                        </div>
-                    `;
-                });
-            }
-            timelineHtml += `</div>`;
-            card.innerHTML = identHtml + timelineHtml;
-            wrapper.appendChild(card);
-        });
-    }
-
-    function transitionToNextPage(targetIndex = null) {
-        const wrapper = document.getElementById('pageWrapper');
-        const totalPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
-        if (totalPages <= 1) return; 
-
-        wrapper.classList.add('dimmed'); 
-        setTimeout(() => {
-            currentPageIndex = targetIndex !== null ? targetIndex : (currentPageIndex + 1) % totalPages;
-            renderActivePage();
-            wrapper.classList.remove('dimmed'); 
-        }, 400);
-    }
-
-    function initAutoPaginationTimer() {
-        if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
-        const totalPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
-        if (totalPages <= 1) return;
-        autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
-    }
-
-    function handleGlobalTap(event) {
-        if (compiledRouteArray.length === 0) return;
-        initAutoPaginationTimer();
-        transitionToNextPage();
-    }
-
-    function refreshETAs() { fetchAndAggregateRouteFeeds(); refreshCountdown = 60; }
 </script>
 </body>
 </html>
