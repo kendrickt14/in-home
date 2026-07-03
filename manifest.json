@@ -1,7 +1,7 @@
 {
-  "name": "HK Bus Crystal Dashboard",
-  "short_name": "Bus Dash",
-  "start_url": ".",
+  "name": "INHOME",
+  "short_name": "INHOME",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#04070d",
   "theme_color": "#04070d",
