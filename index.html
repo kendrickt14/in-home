@@ -6,9 +6,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#04070d">
-    <title>HK Bus Crystal Dashboard</title>
+    <title>INHOME 居日</title>
 
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiSU5IT01FIOWxgeaXpSIsInNob3J0X25hbWUiOiJJTkhPTUUiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzA0MDcwZCIsInRoZW1lX2NvbG9yIjoiIzA0MDcwZCIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NwYXRoIGZpbGw9JyUyM2ZmZmZmZicgZD0nTTUwIDE1IEwxNSA1MCBMMjIgNTAgTDIyIDg1IEw0MiA4NSBMNDIgNjAgTDU4IDYwIEw1OCA4NSBMNzggODUgTDc4IDUwIEw4NSA1MCBaJy8lM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
 
     <style>
         :root {
@@ -21,146 +21,128 @@
             --sans-serif-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        * { -webkit-tap-highlight-color: transparent; }
-
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         html { font-size: 16px; transition: font-size 0.3s ease; }
-
-        html, body { 
-            margin: 0; padding: 0; 
-            height: 100dvh; width: 100vw; 
-            overflow: hidden; 
-            user-select: none; -webkit-user-select: none;
-        }
+        html, body { margin: 0; padding: 0; height: 100dvh; width: 100vw; overflow: hidden; user-select: none; -webkit-user-select: none; }
 
         body {
             font-family: var(--sans-serif-stack);
             padding: 24px;
-            box-sizing: border-box;
             color: var(--text-main);
             background-color: var(--bg-base);
-            display: flex; flex-direction: column;
-            cursor: pointer; 
+            display: flex; flex-direction: column; cursor: pointer; 
         }
 
-        /* Background Layers */
+        /* Backgrounds */
         .bg-slide-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -2; }
-        .bg-slide { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background-size: cover; background-position: center; 
-            opacity: 0; transition: opacity 2s ease-in-out; 
-        }
+        .bg-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 2s ease-in-out; }
         .bg-slide.active { opacity: 0.85; } 
-        .bg-overlay { 
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.05) 0%, rgba(7, 11, 18, 0.45) 100%); 
-            z-index: -1; 
-        }
+        .bg-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at center, rgba(15, 23, 42, 0.05) 0%, rgba(7, 11, 18, 0.45) 100%); z-index: -1; }
 
-        /* HUD */
-        .dashboard-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px; padding-bottom: 16px;
-            border-bottom: 1px solid var(--glass-border);
-            text-shadow: var(--text-glow);
-            flex-shrink: 0;
-            transition: opacity 0.4s;
-        }
+        /* HUD Header */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--glass-border); text-shadow: var(--text-glow); flex-shrink: 0; transition: opacity 0.4s; }
+        .clock-box { display: flex; flex-direction: column; }
         
-        .header-right { display: flex; align-items: center; gap: 15px; }
-        .weather-box {
-            display: flex; align-items: center; gap: 12px;
-            background: var(--glass-card); padding: 8px 16px; border-radius: 12px;
-            border: 1px solid var(--glass-border);
-        }
+        #liveTime { font-size: clamp(3rem, 7vw, 5rem); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+        #liveDate { font-size: clamp(1rem, 2.5vw, 1.5rem); font-weight: 600; margin-top: 8px; letter-spacing: 0.02em; }
 
-        #weatherIcon { width: 36px; height: 36px; display: none; }
-        #temperature { font-size: 1.5rem; font-weight: 700; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        
+        .weather-box { display: flex; align-items: center; gap: 12px; }
+        #weatherIcon { width: 42px; height: 42px; display: none; }
+        #temperature { font-size: 2rem; font-weight: 700; text-shadow: var(--text-glow); }
         #weatherWarnings { display: flex; flex-direction: row; align-items: center; gap: 6px; }
 
-        .settings-btn {
-            background: transparent; border: none; color: var(--text-main);
-            font-size: 1.8rem; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
-        }
+        .settings-btn { background: transparent; border: none; color: var(--text-main); font-size: 1.8rem; cursor: pointer; opacity: 0.15; transition: opacity 0.2s; }
         .settings-btn:hover { opacity: 1; }
 
         .settings-drawer {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px); border-radius: 12px; padding: 20px; display: none;
-            position: absolute; top: 80px; right: 24px; z-index: 100; width: 320px;
+            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border); backdrop-filter: blur(20px); border-radius: 12px; padding: 20px; display: none; position: absolute; top: 80px; right: 24px; z-index: 100; width: 340px; max-height: 70vh; overflow-y: auto;
         }
 
-        .layout-btn {
-            background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border);
-            padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; flex: 1;
-        }
+        .layout-btn, .action-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .layout-btn { flex: 1; }
         .layout-btn.active { background: #3b82f6; border-color: #60a5fa; }
+        .action-btn:hover { background: rgba(255,255,255,0.2); }
+        .input-field { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; padding: 8px 12px; border-radius: 6px; width: 100%; margin-bottom: 8px; }
 
-        /* Main Content Area */
+        /* Main Grid */
         .grid-layout { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        
         #pageWrapper { display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; transition: opacity 0.4s; }
         #pageWrapper.dimmed { opacity: 0; }
 
-        /* Center Time Page */
-        #centerTimePage {
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            width: 100%; height: 100%; text-shadow: var(--text-glow); text-align: center;
-            transition: opacity 0.4s;
-        }
-        #centerTimePage.dimmed { opacity: 0; }
-        
-        #centerLiveTime { font-size: clamp(5rem, 15vw, 9rem); font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
-        #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; opacity: 0.9; margin-top: 10px; }
-        #centerWeatherIcon { 
-            width: clamp(20px, 3.75vw, 38px); /* Mathematically 75% smaller */
-            margin-top: 20px; 
-            display: none; 
+        /* Center Page Styles */
+        .center-layout { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; text-shadow: var(--text-glow); text-align: center; }
+        #centerLiveTime { font-size: clamp(5rem, 15vw, 10rem); font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+        #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; opacity: 0.9; margin-top: 15px; }
+        .center-weather-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 20px; }
+        #centerWeatherWarnings { display: flex; justify-content: center; align-items: center; gap: 8px; }
+
+        /* Weather Forecast Specifics */
+        .forecast-card { background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 120px; backdrop-filter: blur(10px); }
+        .fc-date { font-size: clamp(1rem, 2vw, 1.3rem); font-weight: 600; margin-bottom: 5px; opacity: 0.9; }
+        .fc-week { font-size: clamp(1.2rem, 3vw, 1.6rem); font-weight: 800; margin-bottom: 15px; }
+        .fc-icon { width: clamp(40px, 8vw, 65px); height: auto; margin-bottom: 15px; }
+        .fc-temp { font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 900; }
+
+        /* Stock Page Specifics */
+        .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 700; opacity: 0.8; letter-spacing: 0.05em; }
+        .stock-price { font-size: clamp(6rem, 15vw, 11rem); font-weight: 900; line-height: 1; margin: 10px 0; }
+        .stock-change { font-size: clamp(1.5rem, 4vw, 3rem); font-weight: 700; }
+        .color-up { color: #34d399; }
+        .color-down { color: #f87171; }
+        .color-flat { color: #9ca3af; }
+
+        /* News Page Specifics */
+        .news-tag { font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 700; color: #ff9f43; margin-bottom: 15px; letter-spacing: 0.05em; text-shadow: var(--text-glow); }
+        .news-title-row { 
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem); 
+            font-weight: 700; 
+            line-height: 1.3; 
+            width: 95%; 
+            background: var(--glass-card); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 12px; 
+            padding: 14px 24px;
+            margin-bottom: 10px;
+            backdrop-filter: blur(10px);
+            text-align: left;
+            text-shadow: var(--text-glow);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         /* Bus Cards */
-        .kiosk-card-route {
-            background: var(--glass-card); border: 1px solid var(--glass-border);
-            backdrop-filter: blur(16px); border-radius: 16px; padding: 1.2rem 1.5rem;
-            display: flex; align-items: center; justify-content: space-between; gap: 20px;
-        }
-
+        .kiosk-card-route { background: var(--glass-card); border: 1px solid var(--glass-border); backdrop-filter: blur(16px); border-radius: 16px; padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
         .route-ident-block { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-        .route-badge {
-            font-weight: 900; font-size: 3.5rem; line-height: 0.9;
-            min-width: 100px; padding: 0; background: none;
-        }
-
+        .route-badge { font-weight: 900; font-size: 3.5rem; line-height: 0.9; min-width: 100px; padding: 0; background: none; }
         .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .dest-tc { font-size: 1.6rem; font-weight: 700; white-space: nowrap; } 
         .dest-en { font-size: 1rem; opacity: 0.85; white-space: nowrap; }
         .stop-spec-box { margin-top: 4px; font-size: 0.85rem; color: var(--text-sub); }
 
-        /* Scrollable Timeline */
-        .arrivals-timeline { 
-            display: flex; align-items: center; gap: 12px; 
-            overflow-x: auto; padding: 10px 0; -webkit-overflow-scrolling: touch; 
-        }
+        /* Aligned 2-Row Timeline */
+        .arrivals-timeline { display: flex; align-items: center; gap: 12px; overflow-x: auto; padding: 10px 0; -webkit-overflow-scrolling: touch; }
         .arrival-node { 
-            background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border); 
-            border-radius: 12px; padding: 12px; min-width: 100px; text-align: center;
+            background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border); border-radius: 12px; 
+            padding: 12px; min-width: 110px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        
         .arrival-node:first-child { background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(52, 211, 153, 0.5); }
         .arrival-node.imminent { background: rgba(220, 38, 38, 0.35) !important; border: 1px solid rgba(248, 113, 113, 0.6) !important; animation: pulse 1.5s infinite; }
-
-        .node-mins { font-size: 1.2rem; font-weight: 700; text-shadow: var(--text-glow); }
+        
+        .node-mins { font-size: 1.4rem; font-weight: 700; text-shadow: var(--text-glow); line-height: 1.1; margin-bottom: 4px; }
         .arrival-node:first-child .node-mins { color: #34d399; }
         .arrival-node.imminent .node-mins { color: #f87171; }
-        .node-clock { font-size: 0.8rem; margin-top: 4px; font-weight: 700; opacity: 0.95; }
+        .node-clock { font-size: 0.95rem; font-weight: 700; opacity: 0.95; line-height: 1; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
         @media (max-width: 768px) {
             .kiosk-card-route { flex-direction: column; align-items: flex-start; gap: 12px; }
             .route-ident-block { width: 100%; gap: 16px; }
             .arrivals-timeline { width: 100%; justify-content: flex-start; }
             .dashboard-header { flex-direction: column; align-items: flex-start; gap: 16px; }
             .header-right { width: 100%; justify-content: space-between; }
+            .forecast-card { min-width: 80px; padding: 15px 10px; }
         }
     </style>
 </head>
@@ -169,6 +151,7 @@
     <div class="bg-slide-container" id="bgSlideContainer"></div>
     <div class="bg-overlay"></div>
 
+    <!-- Top HUD Header -->
     <div class="dashboard-header" id="mainHeader" onclick="event.stopPropagation()">
         <div class="clock-box">
             <div id="liveTime">00:00</div>
@@ -185,8 +168,9 @@
         </div>
     </div>
 
+    <!-- Settings Drawer -->
     <div id="settingsDrawer" class="settings-drawer" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0; font-weight: 600;">Dashboard Settings</h3>
+        <h3 style="margin-top:0; font-weight: 600;">INHOME Settings</h3>
         
         <div style="margin-bottom: 20px;">
             <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Layout Size</p>
@@ -197,208 +181,107 @@
             </div>
         </div>
 
-        <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Background Loop</p>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <button onclick="document.getElementById('photoInput').click()" style="background:#16a34a; font-weight:600; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer;">
-                📷 Choose
-            </button>
-            <input type="file" id="photoInput" multiple accept="image/*" style="display:none;">
-            <button onclick="clearCustomPhotos()" style="background:#ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor:pointer; font-weight:500;">Reset</button>
+        <div style="margin-bottom: 20px;">
+            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Stock Tracker (Yahoo Finance)</p>
+            <div style="display:flex; gap: 8px; margin-bottom: 10px;">
+                <input type="text" id="stockInput" class="input-field" placeholder="e.g. 0005.HK or AAPL" style="margin-bottom:0;">
+                <button onclick="addStock()" class="action-btn" style="background:#10b981; border:none;">Add</button>
+            </div>
+            <div id="stockList" style="display:flex; flex-direction:column; gap:6px;"></div>
         </div>
-        <div id="uploadStatusText" style="margin-top:10px; font-size:0.85rem; color:#16a34a; font-weight: 500;"></div>
+
+        <div style="margin-bottom: 10px;">
+            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Background Loop</p>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <button onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Choose</button>
+                <input type="file" id="photoInput" multiple accept="image/*" style="display:none;">
+                <button onclick="clearCustomPhotos()" class="action-btn" style="background:#ef4444; border:none; padding:8px 16px;">Reset</button>
+            </div>
+            <div id="uploadStatusText" style="margin-top:8px; font-size:0.85rem; color:#34d399;"></div>
+        </div>
     </div>
 
     <div class="grid-layout" id="dashboardGrid">
-        
-        <!-- Center Date/Time Page -->
-        <div id="centerTimePage">
-            <div id="centerLiveTime">00:00</div>
-            <div id="centerLiveDate">Loading...</div>
-            <img id="centerWeatherIcon" src="">
-        </div>
-
-        <!-- Bus Route Page Wrapper -->
-        <div id="pageWrapper">
-            <div style="text-align: center; padding: 40px; color: var(--text-main); font-weight: 600; text-shadow: var(--text-glow);">
-                Aggregating routes based on location coordinates. Please verify your browser GPS prompt...
-            </div>
-        </div>
-
+        <div id="pageWrapper"></div>
     </div>
 
 <script>
     // --- PWA Installation Logic ---
     let deferredPrompt;
     const installBtn = document.getElementById('installBtn');
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; });
+    installBtn.addEventListener('click', () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then((cr) => { if (cr.outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; }); } });
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration failed', err));
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installBtn.style.display = 'block';
-    });
-
-    installBtn.addEventListener('click', () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') installBtn.style.display = 'none';
-                deferredPrompt = null;
-            });
-        }
-    });
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration failed', err));
-    }
-
-    // --- App Logic ---
-    let wakeLockInstance = null;
-    let bgIndex = 0;
-    let slideshowIntervalId = null;
-    let userLat = null;
-    let userLng = null;
-    let dbInstance = null;
-    let blobUrlsToClean = [];
-    let imageSourcePaths = []; 
-    
-    let cachedStopMetadataMap = {};
-    let localStopIds = [];
-
-    let compiledRouteArray = [];
-    let currentPageIndex = 0; 
-    let itemsPerPage = 3; 
-    let autoPageRotationInterval = null;
+    // --- Global State & LWB Routes ---
+    let wakeLockInstance = null, autoPageRotationInterval = null, itemsPerPage = 3; 
+    let userLat = null, userLng = null, currentPageIndex = 0; 
+    let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
 
-    const fallbackPhotos = [
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80"
-    ];
+    const lwbRoutes = ["A31", "A32", "A33", "A33X", "A34", "A36", "A37", "A38", "A41", "A41P", "A42", "A43", "A43P", "A46", "A47X", "E31", "E32", "E32A", "E33", "E33P", "E36", "E36A", "E36P", "E36S", "E37", "E37C", "E41", "E42", "E42C", "E43", "NA31", "NA32", "NA33", "NA34", "NA36", "NA37", "NA40", "NA41", "NA43", "NA47", "N30", "N31", "R8", "R42", "S1", "S64", "S64C", "S64P"];
 
-    // Official HKO Warning Codes mapped to their GIF filenames
-    const warnMap = {
-        'WFIREY': 'firey', 'WFIRER': 'firer',
-        'WRAINA': 'wraina', 'WRAINR': 'wrainr', 'WRAINB': 'wrainb',
-        'TC1': 'tc1', 'TC3': 'tc3', 'TC8NE': 'tc8ne', 'TC8NW': 'tc8nw', 
-        'TC8SE': 'tc8se', 'TC8SW': 'tc8sw', 'TC9': 'tc9', 'TC10': 'tc10',
-        'WCOLD': 'cold', 'WHOT': 'vhot', 'WFROST': 'frost',
-        'WL': 'landslip', 'WTS': 'ts', 'WMSGNL': 'sms', 'WTCSW': 'tcsw'
-    };
-
+    // --- Boot Sequence ---
     window.addEventListener('DOMContentLoaded', async () => {
-        const savedSize = localStorage.getItem('layoutSize') || 'medium';
-        setLayoutSize(savedSize);
-
+        setLayoutSize(localStorage.getItem('layoutSize') || 'medium');
+        renderSettingsStockList();
+        
         initClockAndDateLabels();
         await initIndexedDBEngine();
         await loadAndRenderBackgroundSlideshow();
         
         fetchHKOWeather(); 
-        setInterval(fetchHKOWeather, 600000); 
+        fetchForecast();
+        await fetchStocks();
+        await fetchNews();
+        acquireDeviceLocation(); 
+
+        setInterval(() => { fetchHKOWeather(); fetchForecast(); }, 600000); 
+        setInterval(async () => {
+            await fetchStocks(); await fetchNews();
+            if(userLat && userLng) await fetchAndAggregateRouteFeeds();
+        }, 120000); 
 
         requestWakeLock();
-        acquireDeviceLocation();
-
-        setInterval(refreshETAs, 60000);
-        
-        window.addEventListener('resize', () => {
-            if(compiledRouteArray.length > 0) {
-                calculateDynamicItemsPerPage();
-                renderActivePage();
-            }
-        });
+        window.addEventListener('resize', () => { calculateDynamicItemsPerPage(); rebuildQueueAndRender(); });
     });
 
-    // --- Layout Size Logic ---
-    function setLayoutSize(size) {
-        const root = document.documentElement;
-        document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
-        
-        if(size === 'small') { root.style.fontSize = '12px'; document.getElementById('btnSizeSmall').classList.add('active'); }
-        else if(size === 'large') { root.style.fontSize = '20px'; document.getElementById('btnSizeLarge').classList.add('active'); }
-        else { root.style.fontSize = '16px'; document.getElementById('btnSizeMedium').classList.add('active'); size = 'medium'; }
-        
-        localStorage.setItem('layoutSize', size);
-        
-        setTimeout(() => {
-            calculateDynamicItemsPerPage();
-            if(compiledRouteArray.length > 0) renderActivePage();
-        }, 350); 
-    }
-
-    // --- Weather & Clock ---
-    async function fetchHKOWeather() {
-        try {
-            const weatherRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r => r.json());
-            if (weatherRes.icon && weatherRes.icon.length > 0) {
-                const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${weatherRes.icon[0]}.png`;
-                
-                const headerIcon = document.getElementById('weatherIcon');
-                headerIcon.src = iconSrc;
-                headerIcon.style.display = 'block';
-
-                const centerIcon = document.getElementById('centerWeatherIcon');
-                centerIcon.src = iconSrc;
-                centerIcon.style.display = 'block';
-            }
-            if (weatherRes.temperature && weatherRes.temperature.data) {
-                const obsTemp = weatherRes.temperature.data.find(t => t.place === "香港天文台") || weatherRes.temperature.data[0];
-                if (obsTemp) document.getElementById('temperature').textContent = `${obsTemp.value}°C`;
-            }
-
-            const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r => r.json());
-            const warningContainer = document.getElementById('weatherWarnings');
-            warningContainer.innerHTML = ''; 
-
-            if (warnRes && Object.keys(warnRes).length > 0) {
-                Object.keys(warnRes).forEach(key => {
-                    const warn = warnRes[key];
-                    if (warn && warn.name) {
-                        // Crucial fix: Extract the specific signal code if nested (e.g. TC1 instead of WTCSGNL)
-                        const actualCode = warn.code || key; 
-                        
-                        const img = document.createElement('img');
-                        const iconName = warnMap[actualCode] || actualCode.toLowerCase();
-                        img.src = `https://www.hko.gov.hk/tc/wxinfo/dailywx/images/${iconName}.gif`;
-                        img.style.height = '36px';
-                        img.style.width = 'auto';
-                        img.title = warn.name;
-                        
-                        // Fallback to text if the image fails to load
-                        img.onerror = function() {
-                            this.style.display = 'none';
-                            const span = document.createElement('span');
-                            span.textContent = warn.name;
-                            span.style.color = '#fca5a5';
-                            span.style.fontSize = '0.8rem';
-                            warningContainer.appendChild(span);
-                        };
-                        warningContainer.appendChild(img);
-                    }
-                });
-            }
-        } catch (e) { console.error("Weather error:", e); }
-    }
-
+    // --- Date & Time ---
     function initClockAndDateLabels() {
         const update = () => {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-            const tcDate = now.toLocaleDateString('zh-HK', {year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'});
-            const enDate = now.toLocaleDateString('en-US', {month: 'short', day: 'numeric', weekday: 'long'});
-            const dateString = `${tcDate} | ${enDate}`;
+            const daysTc = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+            const daysEn = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            
+            const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
+            const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEn[now.getDay()]})`;
+            const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
 
             document.getElementById('liveTime').textContent = timeString;
-            document.getElementById('centerLiveTime').textContent = timeString;
-            
-            document.getElementById('liveDate').textContent = dateString;
-            document.getElementById('centerLiveDate').textContent = dateString;
+            document.getElementById('liveDate').textContent = fullDateString;
+
+            const clt = document.getElementById('centerLiveTime');
+            if(clt) clt.textContent = timeString;
+            const cld = document.getElementById('centerLiveDate');
+            if(cld) cld.textContent = fullDateString;
         };
         update();
         setInterval(update, 1000);
     }
 
-    // --- Core Aggregation Logic ---
+    // --- Layout Size ---
+    function setLayoutSize(size) {
+        const root = document.documentElement;
+        document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
+        if(size === 'small') { root.style.fontSize = '12px'; document.getElementById('btnSizeSmall').classList.add('active'); }
+        else if(size === 'large') { root.style.fontSize = '20px'; document.getElementById('btnSizeLarge').classList.add('active'); }
+        else { root.style.fontSize = '16px'; document.getElementById('btnSizeMedium').classList.add('active'); size = 'medium'; }
+        localStorage.setItem('layoutSize', size);
+        setTimeout(() => { calculateDynamicItemsPerPage(); rebuildQueueAndRender(); }, 350); 
+    }
+
     function calculateDynamicItemsPerPage() {
         const grid = document.getElementById('dashboardGrid');
         if (!grid) return;
@@ -408,336 +291,286 @@
         itemsPerPage = calc < 1 ? 1 : calc;
     }
 
-    function acquireDeviceLocation() {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            userLat = pos.coords.latitude; userLng = pos.coords.longitude;
-            await findNearbyStops();
-        }, null, { enableHighAccuracy: true, timeout: 10000 });
-    }
+    // --- Weather Logic ---
+    let currentWeatherHTML = '', currentWarnHTML = '', currentTempText = '--°C';
 
-    function getDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const phi1 = lat1 * Math.PI/180; const phi2 = lat2 * Math.PI/180;
-        const deltaPhi = (lat2-lat1) * Math.PI/180; const deltaLambda = (lon2-lon1) * Math.PI/180;
-        return R * 2 * Math.atan2(Math.sqrt(Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2)), Math.sqrt(1-(Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2))));
-    }
+    const warnMap = {
+        'WFIREY': 'firey', 'WFIRER': 'firer', 'WRAINA': 'wraina', 'WRAINR': 'wrainr', 'WRAINB': 'wrainb',
+        'TC1': 'tc1', 'TC3': 'tc3', 'TC8NE': 'tc8ne', 'TC8NW': 'tc8nw', 'TC8SE': 'tc8se', 'TC8SW': 'tc8sw', 'TC9': 'tc9', 'TC10': 'tc10',
+        'WCOLD': 'cold', 'WHOT': 'vhot', 'WFROST': 'frost', 'WL': 'landslip', 'WTS': 'ts', 'WMSGNL': 'sms', 'WTCSW': 'tcsw'
+    };
 
-    async function findNearbyStops() {
+    async function fetchHKOWeather() {
         try {
-            const res = await fetch("https://data.etabus.gov.hk/v1/transport/kmb/stop").then(r => r.json());
-            const allStops = res.data || [];
-            cachedStopMetadataMap = {};
-
-            const nearby = allStops.filter(stop => {
-                const dist = getDistance(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
-                if (dist <= 350) {
-                    cachedStopMetadataMap[stop.stop] = { name_tc: stop.name_tc, name_en: stop.name_en, distance: dist };
-                    return true;
+            const weatherRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r => r.json());
+            if (weatherRes.icon && weatherRes.icon.length > 0) {
+                const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${weatherRes.icon[0]}.png`;
+                document.getElementById('weatherIcon').src = iconSrc; document.getElementById('weatherIcon').style.display = 'block';
+                currentWeatherHTML = iconSrc; 
+            }
+            if (weatherRes.temperature && weatherRes.temperature.data) {
+                const obsTemp = weatherRes.temperature.data.find(t => t.place === "香港天文台") || weatherRes.temperature.data[0];
+                if (obsTemp) {
+                    currentTempText = `${obsTemp.value}°C`; document.getElementById('temperature').textContent = currentTempText;
                 }
-                return false;
-            });
+            }
 
-            localStopIds = nearby.map(s => s.stop);
-            calculateDynamicItemsPerPage();
-            await fetchAndAggregateRouteFeeds();
-        } catch (e) {
-            document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:#f87171;">System Offline.</div>`;
+            const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r => r.json());
+            const warningContainer = document.getElementById('weatherWarnings');
+            warningContainer.innerHTML = ''; currentWarnHTML = '';
+
+            if (warnRes && Object.keys(warnRes).length > 0) {
+                Object.keys(warnRes).forEach(key => {
+                    const warn = warnRes[key];
+                    if (warn && warn.name) {
+                        const actualCode = warn.code || key; 
+                        const iconName = warnMap[actualCode] || actualCode.toLowerCase();
+                        const imgSrc = `https://www.hko.gov.hk/tc/wxinfo/dailywx/images/${iconName}.gif`;
+                        
+                        const img = document.createElement('img');
+                        img.src = imgSrc; img.style.height = '36px'; img.style.width = 'auto'; img.title = warn.name;
+                        
+                        img.onerror = function() {
+                            this.style.display = 'none'; const span = document.createElement('span'); span.textContent = warn.name; span.style.color = '#fca5a5'; span.style.fontSize = '0.8rem';
+                            warningContainer.appendChild(span);
+                        };
+                        warningContainer.appendChild(img);
+                        currentWarnHTML += `<img src="${imgSrc}" style="height:clamp(25px, 5vw, 45px); width:auto;" title="${warn.name}">`;
+                    }
+                });
+            }
+        } catch (e) {} rebuildQueueAndRender(); 
+    }
+
+    async function fetchForecast() {
+        try {
+            const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc').then(r => r.json());
+            if(res.weatherForecast) forecastData = res.weatherForecast;
+        } catch(e) {}
+    }
+
+    // --- Stock Logic ---
+    function getSavedStocks() { return JSON.parse(localStorage.getItem('inhome_stocks') || '[]'); }
+    
+    function renderSettingsStockList() {
+        const list = document.getElementById('stockList'); list.innerHTML = '';
+        getSavedStocks().forEach(sym => {
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem;"><span>${sym}</span><button onclick="removeStock('${sym}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold;">X</button></div>`;
+        });
+    }
+
+    async function addStock() {
+        const val = document.getElementById('stockInput').value.trim().toUpperCase(); if(!val) return;
+        const stocks = getSavedStocks();
+        if(!stocks.includes(val)) {
+            stocks.push(val); localStorage.setItem('inhome_stocks', JSON.stringify(stocks));
+            document.getElementById('stockInput').value = ''; renderSettingsStockList();
+            await fetchStocks(); rebuildQueueAndRender();
         }
+    }
+
+    async function removeStock(sym) {
+        const stocks = getSavedStocks().filter(s => s !== sym);
+        localStorage.setItem('inhome_stocks', JSON.stringify(stocks)); renderSettingsStockList();
+        await fetchStocks(); rebuildQueueAndRender();
+    }
+
+    async function fetchStocks() {
+        const symbols = getSavedStocks(); stockData = []; if(symbols.length === 0) return;
+        for (const sym of symbols) {
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}`)}`;
+                const res = await fetch(proxyUrl).then(r => r.json());
+                const meta = res.chart.result[0].meta, price = meta.regularMarketPrice, prev = meta.chartPreviousClose;
+                stockData.push({ symbol: sym, price: price.toFixed(2), change: (price - prev).toFixed(2), pct: (((price - prev) / prev) * 100).toFixed(2) });
+            } catch(e) {}
+        }
+    }
+
+    // --- News Logic (RTHK RSS) ---
+    async function fetchNews() {
+        newsData = [];
+        try {
+            const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
+            const res = await fetch(rssUrl).then(r => r.json());
+            if(res.items) newsData = res.items.map(item => item.title).slice(0, 15); // Max 15 news total
+        } catch(e) {}
+    }
+
+    // --- Bus ETA Logic ---
+    function acquireDeviceLocation() {
+        if (!navigator.geolocation) { rebuildQueueAndRender(); return; }
+        navigator.geolocation.getCurrentPosition(async (pos) => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; await fetchAndAggregateRouteFeeds(); }, () => { rebuildQueueAndRender(); }, { enableHighAccuracy: true, timeout: 10000 });
     }
 
     async function fetchAndAggregateRouteFeeds() {
-        if (localStopIds.length === 0) {
-            document.getElementById('pageWrapper').innerHTML = `<div style="text-align:center; color:var(--text-main); font-weight:600; text-shadow:var(--text-glow);">No bus stations found within 350 meters.</div>`;
-            return;
-        }
+        try {
+            const res = await fetch("https://data.etabus.gov.hk/v1/transport/kmb/stop").then(r => r.json());
+            const allStops = res.data || []; let cachedStopMap = {};
 
-        const aggregatedRoutes = {};
-        const uniqueRouteBoundClosestDistances = {};
+            const nearbyIds = allStops.filter(stop => {
+                const dist = calculateDist(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
+                if (dist <= 350) { cachedStopMap[stop.stop] = { name_tc: stop.name_tc, name_en: stop.name_en, distance: dist }; return true; }
+                return false;
+            }).map(s => s.stop);
 
-        const fetchPromises = localStopIds.map(async (stopId) => {
-            try {
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`).then(r => r.json());
-                const items = res.data || [];
+            if (nearbyIds.length === 0) { compiledRouteArray = []; rebuildQueueAndRender(); return; }
 
-                items.forEach(item => {
-                    if (!item.eta) return;
-                    
-                    const companyId = item.co || "KMB";
-                    const routeBoundKey = `${companyId}_${item.route}_${item.dir}`;
-                    const currentStopDistance = cachedStopMetadataMap[stopId]?.distance || 99999;
+            const aggregatedRoutes = {}; const routeDistances = {};
 
-                    if (uniqueRouteBoundClosestDistances[routeBoundKey] !== undefined && uniqueRouteBoundClosestDistances[routeBoundKey] < currentStopDistance) return;
-
-                    if (uniqueRouteBoundClosestDistances[routeBoundKey] !== undefined && uniqueRouteBoundClosestDistances[routeBoundKey] > currentStopDistance) {
-                        for (const key in aggregatedRoutes) {
-                            if (key.startsWith(routeBoundKey + "_")) delete aggregatedRoutes[key];
+            const fetchPromises = nearbyIds.map(async (stopId) => {
+                try {
+                    const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`).then(r => r.json());
+                    (etaRes.data || []).forEach(item => {
+                        if (!item.eta) return;
+                        const co = item.co || "KMB"; const routeKey = `${co}_${item.route}_${item.dir}`; const dist = cachedStopMap[stopId]?.distance || 9999;
+                        if (routeDistances[routeKey] !== undefined && routeDistances[routeKey] < dist) return;
+                        if (routeDistances[routeKey] !== undefined && routeDistances[routeKey] > dist) {
+                            for (const k in aggregatedRoutes) { if (k.startsWith(routeKey + "_")) delete aggregatedRoutes[k]; }
                         }
-                    }
+                        routeDistances[routeKey] = dist; const finalKey = `${routeKey}_${stopId}`;
+                        if (!aggregatedRoutes[finalKey]) {
+                            aggregatedRoutes[finalKey] = { company: co, route: item.route, dest_tc: item.dest_tc, dest_en: item.dest_en, stopDistance: dist, stopNameTc: cachedStopMap[stopId].name_tc, stopNameEn: cachedStopMap[stopId].name_en, arrivals: [] };
+                        }
+                        if (!aggregatedRoutes[finalKey].arrivals.some(a => a.eta === item.eta)) { aggregatedRoutes[finalKey].arrivals.push({ eta: item.eta }); }
+                    });
+                } catch(e) {}
+            });
 
-                    uniqueRouteBoundClosestDistances[routeBoundKey] = currentStopDistance;
-                    const finalStorageKey = `${routeBoundKey}_${stopId}`;
-
-                    if (!aggregatedRoutes[finalStorageKey]) {
-                        aggregatedRoutes[finalStorageKey] = {
-                            company: companyId, route: item.route, dest_tc: item.dest_tc, dest_en: item.dest_en,
-                            stopId: stopId, stopDistance: currentStopDistance,
-                            stopNameTc: cachedStopMetadataMap[stopId]?.name_tc || "未知站點",
-                            stopNameEn: cachedStopMetadataMap[stopId]?.name_en || "Unknown Stop",
-                            arrivals: []
-                        };
-                    }
-
-                    if (!aggregatedRoutes[finalStorageKey].arrivals.some(a => a.eta === item.eta)) {
-                        aggregatedRoutes[finalStorageKey].arrivals.push({ eta: item.eta, rmk: item.rmk_tc });
-                    }
-                });
-            } catch (e) {}
-        });
-
-        await Promise.all(fetchPromises);
-
-        compiledRouteArray = Object.values(aggregatedRoutes).map(line => {
-            line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta));
-            return line;
-        }).sort((a, b) => a.stopDistance - b.stopDistance);
-
-        currentPageIndex = 0; 
-        renderActivePage();
-        initAutoPaginationTimer();
+            await Promise.all(fetchPromises);
+            compiledRouteArray = Object.values(aggregatedRoutes).map(line => { line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta)); return line; }).sort((a, b) => a.stopDistance - b.stopDistance);
+            rebuildQueueAndRender();
+        } catch (e) {}
     }
 
-    // --- Page Rendering & Transitions ---
-    function renderActivePage() {
-        const wrapper = document.getElementById('pageWrapper');
-        const centerPage = document.getElementById('centerTimePage');
-        const mainHeader = document.getElementById('mainHeader');
+    function calculateDist(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; const p1 = lat1 * Math.PI/180, p2 = lat2 * Math.PI/180;
+        const dp = (lat2-lat1) * Math.PI/180, dl = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
 
-        if (compiledRouteArray.length === 0) {
-            centerPage.style.display = 'none';
-            wrapper.style.display = 'flex';
-            wrapper.innerHTML = `<div style="text-align:center; color:var(--text-main); font-weight:600; text-shadow:var(--text-glow); padding:20px;">No operational route timetables available.</div>`;
-            return;
-        }
+    // --- Page Queue System ---
+    function rebuildQueueAndRender() {
+        pagesQueue = [];
+        
+        // 1. Clock
+        pagesQueue.push({ type: 'clock' });
 
-        const totalPages = Math.ceil(compiledRouteArray.length / itemsPerPage) + 1;
-        if (currentPageIndex >= totalPages) currentPageIndex = 0;
-
-        if (currentPageIndex === 0) {
-            wrapper.style.display = 'none';
-            centerPage.style.display = 'flex';
-            mainHeader.style.opacity = '0'; 
-            return;
-        }
-
-        centerPage.style.display = 'none';
-        wrapper.style.display = 'flex';
-        mainHeader.style.opacity = '1'; 
-        wrapper.innerHTML = '';
-
-        const startIndex = (currentPageIndex - 1) * itemsPerPage;
-        const pageItems = compiledRouteArray.slice(startIndex, startIndex + itemsPerPage);
-
-        pageItems.forEach(line => {
-            const card = document.createElement('div');
-            card.className = 'kiosk-card-route';
-
-            const badgeColor = line.company === 'LWB' ? '#ff9f43' : '#ff4757';
-            const badgeGlow = line.company === 'LWB' ? 'rgba(255, 159, 67, 0.4)' : 'rgba(255, 71, 87, 0.4)';
-
-            let identHtml = `
-                <div class="route-ident-block">
-                    <div class="route-badge" style="color: ${badgeColor}; text-shadow: 0 0 15px ${badgeGlow}, var(--text-glow);">${line.route}</div>
-                    <div class="dest-col">
-                        <div class="dest-tc">往 ${line.dest_tc}</div>
-                        <div class="dest-en">To ${line.dest_en}</div>
-                        <div class="stop-spec-box">${line.stopNameTc} (${line.stopNameEn})</div>
-                    </div>
-                </div>
-            `;
-
-            let timelineHtml = `<div class="arrivals-timeline">`;
-            const activeArrivals = line.arrivals.slice(0, 3);
-
-            if (activeArrivals.length === 0) {
-                timelineHtml += `<div style="color:var(--text-main); font-size:1.1rem; font-style:italic; font-weight:700; text-shadow:var(--text-glow);">No departures scheduled</div>`;
-            } else {
-                activeArrivals.forEach((arrival, idx) => {
-                    const diff = Math.max(0, Math.floor((new Date(arrival.eta) - new Date()) / 1000 / 60));
-                    const displayClock = new Date(arrival.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    
-                    let nodeClass = "arrival-node";
-                    if (idx === 0 && diff <= 3) nodeClass += " imminent";
-                    const minuteString = diff === 0 ? "到站中 / Arriving" : `${diff} 分鐘 / min`;
-
-                    timelineHtml += `
-                        <div class="${nodeClass}">
-                            <span class="node-mins">${minuteString}</span>
-                            <span class="node-clock">${displayClock}</span>
-                        </div>
-                    `;
-                });
+        // 2. Bus Routes (Now positioned right after Clock)
+        if (compiledRouteArray.length > 0) {
+            const totalBusPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
+            for (let i = 0; i < totalBusPages; i++) {
+                pagesQueue.push({ type: 'bus', data: compiledRouteArray.slice(i * itemsPerPage, (i + 1) * itemsPerPage) });
             }
-            timelineHtml += `</div>`;
-            card.innerHTML = identHtml + timelineHtml;
-            wrapper.appendChild(card);
-        });
+        }
+
+        // 3. Weather Forecast (Max 5 days to fit cleanly)
+        if (forecastData && forecastData.length > 0) {
+            pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
+        }
+
+        // 4. Stocks
+        stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
+
+        // 5. News (Groups of 5)
+        if (newsData.length > 0) {
+            for (let i = 0; i < newsData.length; i += 5) {
+                pagesQueue.push({ type: 'news', data: newsData.slice(i, i + 5) });
+            }
+        }
+
+        if(currentPageIndex >= pagesQueue.length) currentPageIndex = 0;
+        renderActivePage();
+        
+        if (!autoPageRotationInterval) autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
+    }
+
+    function renderActivePage() {
+        const wrapper = document.getElementById('pageWrapper'), mainHeader = document.getElementById('mainHeader');
+        if(pagesQueue.length === 0) return;
+        const page = pagesQueue[currentPageIndex]; wrapper.innerHTML = '';
+
+        if (page.type === 'clock') {
+            mainHeader.style.opacity = '0'; 
+            const now = new Date(); const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            const daysTc = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'], daysEn = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const fullDateString = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]}) \u00A0\u00A0 ${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEn[now.getDay()]})`;
+
+            let weatherHTML = '';
+            if (currentWeatherHTML) weatherHTML = `<img src="${currentWeatherHTML}" style="width: clamp(30px, 5vw, 45px); height: auto; display: block;">`;
+
+            wrapper.innerHTML = `<div class="center-layout"><div id="centerLiveTime">${timeString}</div><div id="centerLiveDate">${fullDateString}</div><div class="center-weather-row">${weatherHTML}<div id="centerWeatherWarnings">${currentWarnHTML}</div></div></div>`;
+        } 
+        else if (page.type === 'forecast') {
+            mainHeader.style.opacity = '1';
+            let forecastHtml = page.data.map(f => {
+                const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${f.ForecastIcon}.png`;
+                const dateStr = f.forecastDate.substring(4,6) + '/' + f.forecastDate.substring(6,8);
+                return `<div class="forecast-card"><div class="fc-date">${dateStr}</div><div class="fc-week">${f.week}</div><img src="${iconSrc}" class="fc-icon"><div class="fc-temp">${f.mintemp.value}° - ${f.maxtemp.value}°</div></div>`;
+            }).join('');
+            
+            wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap;">${forecastHtml}</div>`;
+        }
+        else if (page.type === 'stock') {
+            mainHeader.style.opacity = '1';
+            const s = page.data, colorClass = s.change > 0 ? 'color-up' : (s.change < 0 ? 'color-down' : 'color-flat'), sign = s.change > 0 ? '+' : '';
+            wrapper.innerHTML = `<div class="center-layout"><div class="stock-symbol">${s.symbol}</div><div class="stock-price">${s.price}</div><div class="stock-change ${colorClass}">${sign}${s.change} (${sign}${s.pct}%)</div></div>`;
+        }
+        else if (page.type === 'news') {
+            mainHeader.style.opacity = '1';
+            let titlesHtml = page.data.map(t => `<div class="news-title-row">${t}</div>`).join('');
+            wrapper.innerHTML = `<div class="center-layout" style="justify-content: center; gap: 6px;"><div class="news-tag">📰 News / 新聞</div>${titlesHtml}</div>`;
+        }
+        else if (page.type === 'bus') {
+            mainHeader.style.opacity = '1';
+            page.data.forEach(line => {
+                const card = document.createElement('div'); card.className = 'kiosk-card-route';
+                const isLWB = line.company === 'LWB' || lwbRoutes.includes(line.route);
+                const badgeColor = isLWB ? '#ff9f43' : '#ff4757', badgeGlow = isLWB ? 'rgba(255, 159, 67, 0.4)' : 'rgba(255, 71, 87, 0.4)';
+
+                let identHtml = `<div class="route-ident-block"><div class="route-badge" style="color: ${badgeColor}; text-shadow: 0 0 15px ${badgeGlow}, var(--text-glow);">${line.route}</div><div class="dest-col"><div class="dest-tc">往 ${line.dest_tc}</div><div class="dest-en">To ${line.dest_en}</div><div class="stop-spec-box">${line.stopNameTc} (${line.stopNameEn})</div></div></div>`;
+                let timelineHtml = `<div class="arrivals-timeline">`;
+                const activeArrivals = line.arrivals.slice(0, 3);
+
+                if (activeArrivals.length === 0) timelineHtml += `<div style="color:var(--text-main); font-size:1.1rem; font-style:italic; font-weight:700; text-shadow:var(--text-glow);">No departures scheduled</div>`;
+                else {
+                    activeArrivals.forEach((arrival, idx) => {
+                        const diff = Math.max(0, Math.floor((new Date(arrival.eta) - new Date()) / 1000 / 60));
+                        const displayClock = new Date(arrival.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                        let nodeClass = "arrival-node"; if (idx === 0 && diff <= 3) nodeClass += " imminent";
+                        const minuteString = diff === 0 ? "到站中" : `${diff} 分鐘`;
+                        timelineHtml += `<div class="${nodeClass}"><span class="node-mins">${minuteString}</span><span class="node-clock">${displayClock}</span></div>`;
+                    });
+                }
+                timelineHtml += `</div>`; card.innerHTML = identHtml + timelineHtml; wrapper.appendChild(card);
+            });
+        }
     }
 
     function transitionToNextPage(targetIndex = null) {
-        const wrapper = document.getElementById('pageWrapper');
-        const centerPage = document.getElementById('centerTimePage');
-        const totalPages = compiledRouteArray.length > 0 ? Math.ceil(compiledRouteArray.length / itemsPerPage) + 1 : 1;
-        if (totalPages <= 1) return; 
-
-        wrapper.classList.add('dimmed'); 
-        centerPage.classList.add('dimmed');
-
-        setTimeout(() => {
-            currentPageIndex = targetIndex !== null ? targetIndex : (currentPageIndex + 1) % totalPages;
-            renderActivePage();
-            wrapper.classList.remove('dimmed'); 
-            centerPage.classList.remove('dimmed');
-        }, 400);
-    }
-
-    function initAutoPaginationTimer() {
-        if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
-        const totalPages = compiledRouteArray.length > 0 ? Math.ceil(compiledRouteArray.length / itemsPerPage) + 1 : 1;
-        if (totalPages <= 1) return;
-        autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
+        if(pagesQueue.length <= 1) return;
+        const wrapper = document.getElementById('pageWrapper'); wrapper.classList.add('dimmed'); 
+        setTimeout(() => { currentPageIndex = targetIndex !== null ? targetIndex : (currentPageIndex + 1) % pagesQueue.length; renderActivePage(); wrapper.classList.remove('dimmed'); }, 400);
     }
 
     function handleGlobalTap(event) {
-        if (compiledRouteArray.length === 0) return;
-        initAutoPaginationTimer();
-        transitionToNextPage();
-    }
-
-    function refreshETAs() { fetchAndAggregateRouteFeeds(); }
-    
-    // --- Database & Slideshow Logic ---
-    function initIndexedDBEngine() {
-        return new Promise((resolve) => {
-            const request = indexedDB.open("BusKioskDashboardDB", 1);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains("backgrounds")) {
-                    db.createObjectStore("backgrounds", { keyPath: "id", autoIncrement: true });
-                }
-            };
-            request.onsuccess = (e) => { dbInstance = e.target.result; resolve(); };
-            request.onerror = () => resolve();
-        });
-    }
-
-    function saveBlobToIndexedDB(blobData) {
-        return new Promise((resolve, reject) => {
-            if (!dbInstance) return reject("Database offline");
-            const tx = dbInstance.transaction("backgrounds", "readwrite");
-            const store = tx.objectStore("backgrounds");
-            const req = store.add({ blob: blobData, timestamp: Date.now() });
-            req.onsuccess = () => resolve();
-            req.onerror = (err) => reject(err);
-        });
-    }
-
-    function getAllBlobsFromIndexedDB() {
-        return new Promise((resolve) => {
-            if (!dbInstance) return resolve([]);
-            const tx = dbInstance.transaction("backgrounds", "readonly");
-            const store = tx.objectStore("backgrounds");
-            const req = store.getAll();
-            req.onsuccess = () => resolve(req.result || []);
-            req.onerror = () => resolve([]);
-        });
-    }
-
-    function clearIndexedDBBackgrounds() {
-        return new Promise((resolve) => {
-            if (!dbInstance) return resolve();
-            const tx = dbInstance.transaction("backgrounds", "readwrite");
-            const store = tx.objectStore("backgrounds");
-            const req = store.clear();
-            req.onsuccess = () => resolve();
-            req.onerror = () => resolve();
-        });
-    }
-
-    async function loadAndRenderBackgroundSlideshow() {
-        const container = document.getElementById('bgSlideContainer');
-        container.innerHTML = ''; 
-        if(slideshowIntervalId) clearInterval(slideshowIntervalId);
-
-        blobUrlsToClean.forEach(url => URL.revokeObjectURL(url));
-        blobUrlsToClean = [];
-        imageSourcePaths = [];
-
-        const savedRecords = await getAllBlobsFromIndexedDB();
-
-        if (savedRecords && savedRecords.length > 0) {
-            savedRecords.forEach(record => {
-                const objectUrl = URL.createObjectURL(record.blob);
-                imageSourcePaths.push(objectUrl);
-                blobUrlsToClean.push(objectUrl);
-            });
-            document.getElementById('uploadStatusText').textContent = `✓ Running ${savedRecords.length} custom photos`;
+        if (pagesQueue.length <= 1) return;
+        if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
+        
+        // Find the index of the first Bus ETA page
+        const firstBusIndex = pagesQueue.findIndex(p => p.type === 'bus');
+        
+        // If clicking while NOT on a bus page, jump instantly to the Bus ETA page
+        if (pagesQueue[currentPageIndex].type !== 'bus' && firstBusIndex !== -1) {
+            transitionToNextPage(firstBusIndex);
         } else {
-            imageSourcePaths = fallbackPhotos;
+            // If already on a bus page (or no bus pages exist), just go to the next normal page
+            transitionToNextPage();
         }
-
-        imageSourcePaths.forEach((srcUrl, i) => {
-            const div = document.createElement('div');
-            div.className = `bg-slide ${i === 0 ? 'active' : ''}`;
-            div.style.backgroundImage = `url('${srcUrl}')`;
-            container.appendChild(div);
-        });
-
-        bgIndex = 0;
-        slideshowIntervalId = setInterval(() => {
-            const slides = document.querySelectorAll('.bg-slide');
-            if(slides.length <= 1) return;
-            slides[bgIndex].classList.remove('active');
-            bgIndex = (bgIndex + 1) % slides.length;
-            slides[bgIndex].classList.add('active');
-        }, 12000); 
-    }
-
-    document.getElementById('photoInput').addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files);
-        if(files.length === 0) return;
-        document.getElementById('uploadStatusText').textContent = `Processing ${files.length} images...`;
-        await clearIndexedDBBackgrounds();
-        for(let file of files) {
-            try {
-                const optimizedBlob = await compressImageFileToBlobAsync(file);
-                await saveBlobToIndexedDB(optimizedBlob);
-            } catch(err) {}
-        }
-        await loadAndRenderBackgroundSlideshow();
-    });
-
-    function compressImageFileToBlobAsync(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.min(1920, img.width);
-                    canvas.height = Math.min(1080, img.height);
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob((b) => b ? resolve(b) : reject(), 'image/jpeg', 0.85);
-                };
-            };
-        });
-    }
-
-    async function clearCustomPhotos() {
-        await clearIndexedDBBackgrounds();
-        await loadAndRenderBackgroundSlideshow();
+        
+        autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
     }
 
     function toggleSettingsDrawer() {
@@ -745,9 +578,32 @@
         drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
     }
 
-    async function requestWakeLock() {
-        try { if ('wakeLock' in navigator) wakeLockInstance = await navigator.wakeLock.request('screen'); } catch (e) {}
+    // --- Background Logic ---
+    let dbInstance = null, slideshowIntervalId = null, blobUrlsToClean = [];
+    function initIndexedDBEngine() { return new Promise((resolve) => { const req = indexedDB.open("BusKioskDB", 1); req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("bgs")) e.target.result.createObjectStore("bgs", {keyPath: "id", autoIncrement: true}); }; req.onsuccess = e => { dbInstance = e.target.result; resolve(); }; req.onerror = () => resolve(); }); }
+    function saveBlobToIndexedDB(blob) { return new Promise((res, rej) => { if(!dbInstance) return rej(); const tx = dbInstance.transaction("bgs", "readwrite"); tx.objectStore("bgs").add({blob: blob}); tx.oncomplete = res; }); }
+    function getAllBlobsFromIndexedDB() { return new Promise(res => { if(!dbInstance) return res([]); const req = dbInstance.transaction("bgs", "readonly").objectStore("bgs").getAll(); req.onsuccess = () => res(req.result||[]); req.onerror = () => res([]); }); }
+    function clearIndexedDBBackgrounds() { return new Promise(res => { if(!dbInstance) return res(); const req = dbInstance.transaction("bgs", "readwrite").objectStore("bgs").clear(); req.onsuccess = res; }); }
+
+    async function loadAndRenderBackgroundSlideshow() {
+        const container = document.getElementById('bgSlideContainer'); container.innerHTML = '';
+        if(slideshowIntervalId) clearInterval(slideshowIntervalId);
+        blobUrlsToClean.forEach(URL.revokeObjectURL); blobUrlsToClean = [];
+        const records = await getAllBlobsFromIndexedDB();
+        const sources = records.length > 0 ? records.map(r => { const u = URL.createObjectURL(r.blob); blobUrlsToClean.push(u); return u; }) : ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80", "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80"];
+        if(records.length>0) document.getElementById('uploadStatusText').textContent = `✓ ${records.length} custom photos`; else document.getElementById('uploadStatusText').textContent = '';
+        sources.forEach((s, i) => { const d = document.createElement('div'); d.className = `bg-slide ${i===0?'active':''}`; d.style.backgroundImage = `url('${s}')`; container.appendChild(d); });
+        let bgIndex = 0; slideshowIntervalId = setInterval(() => { const s = document.querySelectorAll('.bg-slide'); if(s.length<=1) return; s[bgIndex].classList.remove('active'); bgIndex = (bgIndex+1)%s.length; s[bgIndex].classList.add('active'); }, 12000);
     }
+
+    document.getElementById('photoInput').addEventListener('change', async e => {
+        const f = Array.from(e.target.files); if(!f.length) return; document.getElementById('uploadStatusText').textContent = `Processing...`; await clearIndexedDBBackgrounds();
+        for(let file of f) { try { const b = await new Promise((res,rej) => { const r = new FileReader(); r.onload = ev => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'); c.width = Math.min(1920, i.width); c.height = Math.min(1080, i.height); c.getContext('2d').drawImage(i,0,0,c.width,c.height); c.toBlob(res,'image/jpeg',0.85); }; i.src = ev.target.result; }; r.readAsDataURL(file); }); await saveBlobToIndexedDB(b); } catch(e){} }
+        await loadAndRenderBackgroundSlideshow();
+    });
+
+    async function clearCustomPhotos() { await clearIndexedDBBackgrounds(); await loadAndRenderBackgroundSlideshow(); }
+    async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLockInstance = await navigator.wakeLock.request('screen'); } catch (e) {} }
 </script>
 </body>
 </html>
