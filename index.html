@@ -457,7 +457,7 @@
         // 1. Clock
         pagesQueue.push({ type: 'clock' });
 
-        // 2. Bus Routes (Now positioned right after Clock)
+        // 2. Bus Routes 
         if (compiledRouteArray.length > 0) {
             const totalBusPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
             for (let i = 0; i < totalBusPages; i++) {
@@ -465,7 +465,7 @@
             }
         }
 
-        // 3. Weather Forecast (Max 5 days to fit cleanly)
+        // 3. Weather Forecast (Max 5 days)
         if (forecastData && forecastData.length > 0) {
             pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         }
@@ -501,14 +501,20 @@
             let weatherHTML = '';
             if (currentWeatherHTML) weatherHTML = `<img src="${currentWeatherHTML}" style="width: clamp(30px, 5vw, 45px); height: auto; display: block;">`;
 
-            wrapper.innerHTML = `<div class="center-layout"><div id="centerLiveTime">${timeString}</div><div id="centerLiveDate">${fullDateString}</div><div class="center-weather-row">${weatherHTML}<div id="centerWeatherWarnings">${currentWarnHTML}</div></div></div>`;
+            // Note the style="margin-top: -80px;" which perfectly vertically centers the clock page!
+            wrapper.innerHTML = `<div class="center-layout" style="margin-top: -80px;"><div id="centerLiveTime">${timeString}</div><div id="centerLiveDate">${fullDateString}</div><div class="center-weather-row">${weatherHTML}<div id="centerWeatherWarnings">${currentWarnHTML}</div></div></div>`;
         } 
         else if (page.type === 'forecast') {
             mainHeader.style.opacity = '1';
             let forecastHtml = page.data.map(f => {
                 const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${f.ForecastIcon}.png`;
                 const dateStr = f.forecastDate.substring(4,6) + '/' + f.forecastDate.substring(6,8);
-                return `<div class="forecast-card"><div class="fc-date">${dateStr}</div><div class="fc-week">${f.week}</div><img src="${iconSrc}" class="fc-icon"><div class="fc-temp">${f.mintemp.value}° - ${f.maxtemp.value}°</div></div>`;
+                
+                // Fixed HKO API Temperature reading logic
+                const minT = f.forecastMintemp ? f.forecastMintemp.value : '--';
+                const maxT = f.forecastMaxtemp ? f.forecastMaxtemp.value : '--';
+
+                return `<div class="forecast-card"><div class="fc-date">${dateStr}</div><div class="fc-week">${f.week}</div><img src="${iconSrc}" class="fc-icon"><div class="fc-temp">${minT}° - ${maxT}°</div></div>`;
             }).join('');
             
             wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap;">${forecastHtml}</div>`;
@@ -540,7 +546,10 @@
                         const diff = Math.max(0, Math.floor((new Date(arrival.eta) - new Date()) / 1000 / 60));
                         const displayClock = new Date(arrival.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                         let nodeClass = "arrival-node"; if (idx === 0 && diff <= 3) nodeClass += " imminent";
-                        const minuteString = diff === 0 ? "到站中" : `${diff} 分鐘`;
+                        
+                        // Updated to include "Mins" in English
+                        const minuteString = diff === 0 ? "到站中 / Arriving" : `${diff} 分鐘 / Mins`;
+                        
                         timelineHtml += `<div class="${nodeClass}"><span class="node-mins">${minuteString}</span><span class="node-clock">${displayClock}</span></div>`;
                     });
                 }
