@@ -108,13 +108,13 @@
         /* Weather Forecast Specifics */
         .forecast-card { 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
-            padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            flex: 1; min-width: 120px; backdrop-filter: blur(10px); 
+            padding: 20px 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            flex: 1; min-width: 160px; backdrop-filter: blur(10px); 
         }
-        .fc-date { font-size: clamp(1rem, 2vw, 1.3rem); font-weight: 600; margin-bottom: 5px; opacity: 0.9; }
-        .fc-week { font-size: clamp(1.2rem, 3vw, 1.6rem); font-weight: 800; margin-bottom: 15px; }
+        .fc-date { font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 800; margin-bottom: 4px; line-height: 1.2; }
+        .fc-week { font-size: clamp(1rem, 2.2vw, 1.3rem); font-weight: 600; margin-bottom: 15px; opacity: 0.85; }
         .fc-icon { width: clamp(40px, 8vw, 65px); height: auto; margin-bottom: 15px; }
-        .fc-temp { font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 900; }
+        .fc-temp { font-size: clamp(1.4rem, 3.5vw, 2rem); font-weight: 900; }
 
         /* Stock Page Specifics */
         .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 700; opacity: 0.8; letter-spacing: 0.05em; }
@@ -144,7 +144,19 @@
             justify-content: space-between; gap: 20px; 
         }
         .route-ident-block { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-        .route-badge { font-weight: 900; font-size: 3.5rem; line-height: 0.9; min-width: 100px; padding: 0; background: none; }
+        
+        /* Updated Route Badge for Perfect Destination Alignment */
+        .route-badge { 
+            font-weight: 900; 
+            font-size: 3.5rem; 
+            line-height: 0.9; 
+            width: 140px; /* Fixed width forces destinations to start at the same pixel */
+            text-align: center; /* Centers short/long routes nicely inside the fixed box */
+            padding: 0; 
+            background: none; 
+            flex-shrink: 0; 
+        }
+
         .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .dest-tc { font-size: 1.6rem; font-weight: 700; white-space: nowrap; } 
         .dest-en { font-size: 1rem; opacity: 0.85; white-space: nowrap; }
@@ -175,7 +187,7 @@
             .arrivals-timeline { width: 100%; justify-content: flex-start; }
             .dashboard-header { flex-direction: column; align-items: flex-start; gap: 16px; }
             .header-right { width: 100%; justify-content: space-between; }
-            .forecast-card { min-width: 80px; padding: 15px 10px; }
+            .forecast-card { min-width: 110px; padding: 15px 10px; }
         }
     </style>
 </head>
@@ -266,8 +278,6 @@
     let currentPageIndex = 0; 
     let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
-
-    const lwbRoutes = ["A31", "A32", "A33", "A33X", "A34", "A36", "A37", "A38", "A41", "A41P", "A42", "A43", "A43P", "A46", "A47X", "E31", "E32", "E32A", "E33", "E33P", "E36", "E36A", "E36P", "E36S", "E37", "E37C", "E41", "E42", "E42C", "E43", "NA31", "NA32", "NA33", "NA34", "NA36", "NA37", "NA40", "NA41", "NA43", "NA47", "N30", "N31", "R8", "R42", "S1", "S64", "S64C", "S64P"];
 
     // --- Boot Sequence ---
     window.addEventListener('DOMContentLoaded', async () => {
@@ -596,7 +606,7 @@
                         }
                     });
                 } catch(e) {
-                    // Fail silently for individual stop errors
+                    // Fail silently
                 }
             });
 
@@ -638,7 +648,7 @@
             }
         }
 
-        // 3. Weather Forecast (Max 5 days)
+        // 3. Weather Forecast
         if (forecastData && forecastData.length > 0) {
             pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         }
@@ -648,7 +658,7 @@
             pagesQueue.push({ type: 'stock', data: stk });
         });
 
-        // 5. News (Groups of 5)
+        // 5. News
         if (newsData.length > 0) {
             for (let i = 0; i < newsData.length; i += 5) {
                 pagesQueue.push({ type: 'news', data: newsData.slice(i, i + 5) });
@@ -675,14 +685,18 @@
         const page = pagesQueue[currentPageIndex]; 
         wrapper.innerHTML = '';
 
+        const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const daysEnArr = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
         if (page.type === 'clock') {
             mainHeader.style.opacity = '0'; 
             const now = new Date(); 
             const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            
             const daysTc = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
-            const daysEn = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-            const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            const fullDateString = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]}) \u00A0\u00A0 ${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEn[now.getDay()]})`;
+            const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
+            const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEnArr[now.getDay()]})`;
+            const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
 
             let weatherHTML = '';
             if (currentWeatherHTML) {
@@ -704,15 +718,24 @@
             mainHeader.style.opacity = '1';
             let forecastHtml = page.data.map(f => {
                 const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${f.ForecastIcon}.png`;
-                const dateStr = f.forecastDate.substring(4,6) + '/' + f.forecastDate.substring(6,8);
+                
+                const year = parseInt(f.forecastDate.substring(0, 4), 10);
+                const monthNum = parseInt(f.forecastDate.substring(4, 6), 10);
+                const dayNum = parseInt(f.forecastDate.substring(6, 8), 10);
+                
+                const dateObj = new Date(year, monthNum - 1, dayNum);
+                const dayEn = daysEnArr[dateObj.getDay()];
+                
+                const dateLine1 = `${monthNum}月${dayNum}日 &nbsp;|&nbsp; ${dayNum} ${monthsEn[monthNum - 1]}`;
+                const dateLine2 = `(${f.week} ${dayEn})`;
                 
                 const minT = f.forecastMintemp ? f.forecastMintemp.value : '--';
                 const maxT = f.forecastMaxtemp ? f.forecastMaxtemp.value : '--';
 
                 return `
                     <div class="forecast-card">
-                        <div class="fc-date">${dateStr}</div>
-                        <div class="fc-week">${f.week}</div>
+                        <div class="fc-date">${dateLine1}</div>
+                        <div class="fc-week">${dateLine2}</div>
                         <img src="${iconSrc}" class="fc-icon" />
                         <div class="fc-temp">${minT}° - ${maxT}°</div>
                     </div>
@@ -754,13 +777,12 @@
                 const card = document.createElement('div'); 
                 card.className = 'kiosk-card-route';
                 
-                const isLWB = line.company === 'LWB' || lwbRoutes.includes(line.route);
-                const badgeColor = isLWB ? '#ff9f43' : '#ff4757';
-                const badgeGlow = isLWB ? 'rgba(255, 159, 67, 0.4)' : 'rgba(255, 71, 87, 0.4)';
+                // Color changed to #000435 for all companies as requested
+                const badgeColor = '#000435';
 
                 let identHtml = `
                     <div class="route-ident-block">
-                        <div class="route-badge" style="color: ${badgeColor}; text-shadow: 0 0 15px ${badgeGlow}, var(--text-glow);">${line.route}</div>
+                        <div class="route-badge" style="color: ${badgeColor}; text-shadow: var(--text-glow);">${line.route}</div>
                         <div class="dest-col">
                             <div class="dest-tc">往 ${line.dest_tc}</div>
                             <div class="dest-en">To ${line.dest_en}</div>
@@ -782,7 +804,6 @@
                         let nodeClass = "arrival-node"; 
                         if (idx === 0 && diff <= 3) nodeClass += " imminent";
                         
-                        // Bilingual ETA Logic perfectly placed on one line
                         const minuteString = diff === 0 ? "到站中 Arriving" : `${diff} 分鐘 Mins`;
                         
                         timelineHtml += `
