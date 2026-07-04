@@ -3,22 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#04070d">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <title>INHOME</title>
-
     <link rel="manifest" href="manifest.json">
-
     <style>
         :root {
-            --glass-card: rgba(20, 20, 30, 0.35);
-            --glass-border: rgba(255, 255, 255, 0.25);
-            --text-main: #ffffff;
-            --text-sub: rgba(255, 255, 255, 0.75);
-            --bg-base: #04070d;
-            --text-glow: 0 2px 4px rgba(0,0,0,0.6);
-            --sans-serif-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --glass-card: rgba(15, 25, 55, 0.5);
+            --glass-border: rgba(100, 150, 250, 0.2);
+            --text-main: #E2E8F0;
+            --text-sub: #94A3B8;
+            --bg-base: #0B132B;
+            --text-glow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            --sans-serif-stack: 'Inter', system-ui, sans-serif;
         }
 
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -55,12 +51,10 @@
             text-shadow: var(--text-glow); flex-shrink: 0; transition: opacity 0.4s; 
         }
         .clock-box { display: flex; flex-direction: column; }
-        
         #liveTime { font-size: clamp(3rem, 7vw, 5rem); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
         #liveDate { font-size: clamp(1rem, 2.5vw, 1.5rem); font-weight: 600; margin-top: 8px; letter-spacing: 0.02em; }
 
         .header-right { display: flex; align-items: center; gap: 15px; }
-        
         .weather-box { display: flex; align-items: center; gap: 12px; }
         #weatherIcon { width: 42px; height: 42px; display: none; }
         #temperature { font-size: 2rem; font-weight: 700; text-shadow: var(--text-glow); }
@@ -73,7 +67,7 @@
         .settings-btn:hover { opacity: 1; }
 
         .settings-drawer {
-            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border); 
+            background: rgba(11, 19, 43, 0.98); border: 1px solid var(--glass-border); 
             backdrop-filter: blur(20px); border-radius: 12px; padding: 20px; display: none; 
             position: absolute; top: 80px; right: 24px; z-index: 100; width: 340px; max-height: 70vh; overflow-y: auto;
         }
@@ -105,7 +99,7 @@
         .center-weather-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 20px; }
         #centerWeatherWarnings { display: flex; justify-content: center; align-items: center; gap: 8px; }
 
-        /* Weather Forecast Specifics */
+        /* Weather Forecast Specifics (Smaller) */
         .forecast-card { 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
             padding: 15px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -120,13 +114,14 @@
         .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 700; opacity: 0.8; letter-spacing: 0.05em; }
         .stock-price { font-size: clamp(6rem, 15vw, 11rem); font-weight: 900; line-height: 1; margin: 10px 0; }
         .stock-change { font-size: clamp(1.5rem, 4vw, 3rem); font-weight: 700; }
-        .color-up { color: #34d399; }
-        .color-down { color: #f87171; }
+        .color-up { color: #6EE7B7; }
+        .color-down { color: #FDA4AF; }
         .color-flat { color: #9ca3af; }
 
         /* News Page Specifics */
         .news-tag { 
-            font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 700; color: #ffffff; 
+            color: #FFFFFF !important; 
+            font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 700; 
             margin-bottom: 15px; letter-spacing: 0.05em; text-shadow: var(--text-glow); 
         }
         .news-title-row { 
@@ -144,19 +139,11 @@
             justify-content: space-between; gap: 20px; 
         }
         .route-ident-block { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-        
-        /* Updated Route Badge for Perfect Destination Alignment */
         .route-badge { 
-            font-weight: 900; 
-            font-size: 3.5rem; 
-            line-height: 0.9; 
-            width: 140px; /* Fixed width forces destinations to start at the same pixel */
-            text-align: center; /* Centers short/long routes nicely inside the fixed box */
-            padding: 0; 
-            background: none; 
-            flex-shrink: 0; 
+            color: #FFFFFF !important; 
+            font-weight: 900; font-size: 3.5rem; line-height: 0.9; width: 140px; 
+            text-align: center; padding: 0; background: none; flex-shrink: 0; 
         }
-
         .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .dest-tc { font-size: 1.6rem; font-weight: 700; white-space: nowrap; } 
         .dest-en { font-size: 1rem; opacity: 0.85; white-space: nowrap; }
@@ -230,17 +217,16 @@
                 <input type="text" id="stockInput" class="input-field" placeholder="e.g. 0005.HK or AAPL" style="margin-bottom:0;" />
                 <button onclick="addStock()" class="action-btn" style="background:#10b981; border:none;">Add</button>
             </div>
-            <div id="stockList" style="display:flex; flex-direction:column; gap:6px;"></div>
+            <div id="stockList" style="display:flex; flex-direction:column; gap:6px; max-height: 120px; overflow-y: auto;"></div>
         </div>
 
         <div style="margin-bottom: 10px;">
-            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Background Loop</p>
-            <div style="display:flex; gap:12px; align-items:center;">
-                <button onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Choose</button>
+            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Background Photos</p>
+            <div style="display:flex; gap:12px; align-items:center; margin-bottom: 10px;">
+                <button onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Add Photos</button>
                 <input type="file" id="photoInput" multiple accept="image/*" style="display:none;" />
-                <button onclick="clearCustomPhotos()" class="action-btn" style="background:#ef4444; border:none; padding:8px 16px;">Reset</button>
             </div>
-            <div id="uploadStatusText" style="margin-top:8px; font-size:0.85rem; color:#34d399;"></div>
+            <div id="photoList" style="display:flex; flex-direction:column; gap:6px; max-height: 150px; overflow-y: auto;"></div>
         </div>
     </div>
 
@@ -270,7 +256,7 @@
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Registration failed', err));
     }
 
-    // --- Global State & LWB Routes ---
+    // --- Global State ---
     let wakeLockInstance = null;
     let autoPageRotationInterval = null;
     let itemsPerPage = 3; 
@@ -286,6 +272,7 @@
         
         initClockAndDateLabels();
         await initIndexedDBEngine();
+        await renderSettingsPhotoList(); // Render individual photos in settings
         await loadAndRenderBackgroundSlideshow();
         
         fetchHKOWeather(); 
@@ -369,8 +356,9 @@
     // --- Weather Logic ---
     let currentWeatherHTML = '', currentWarnHTML = '', currentTempText = '--°C';
 
+    // FIX: Updated HKO Rainstorm image names from wraina to just raina, rainr, rainb
     const warnMap = {
-        'WFIREY': 'firey', 'WFIRER': 'firer', 'WRAINA': 'wraina', 'WRAINR': 'wrainr', 'WRAINB': 'wrainb',
+        'WFIREY': 'firey', 'WFIRER': 'firer', 'WRAINA': 'raina', 'WRAINR': 'rainr', 'WRAINB': 'rainb',
         'TC1': 'tc1', 'TC3': 'tc3', 'TC8NE': 'tc8ne', 'TC8NW': 'tc8nw', 'TC8SE': 'tc8se', 'TC8SW': 'tc8sw', 'TC9': 'tc9', 'TC10': 'tc10',
         'WCOLD': 'cold', 'WHOT': 'vhot', 'WFROST': 'frost', 'WL': 'landslip', 'WTS': 'ts', 'WMSGNL': 'sms', 'WTCSW': 'tcsw'
     };
@@ -451,7 +439,7 @@
         list.innerHTML = '';
         getSavedStocks().forEach(sym => {
             list.innerHTML += `
-                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem;">
+                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center;">
                     <span>${sym}</span>
                     <button onclick="removeStock('${sym}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold;">X</button>
                 </div>
@@ -637,10 +625,8 @@
     function rebuildQueueAndRender() {
         pagesQueue = [];
         
-        // 1. Clock
         pagesQueue.push({ type: 'clock' });
 
-        // 2. Bus Routes 
         if (compiledRouteArray.length > 0) {
             const totalBusPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
             for (let i = 0; i < totalBusPages; i++) {
@@ -648,17 +634,14 @@
             }
         }
 
-        // 3. Weather Forecast
         if (forecastData && forecastData.length > 0) {
             pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         }
 
-        // 4. Stocks
         stockData.forEach(stk => {
             pagesQueue.push({ type: 'stock', data: stk });
         });
 
-        // 5. News
         if (newsData.length > 0) {
             for (let i = 0; i < newsData.length; i += 5) {
                 pagesQueue.push({ type: 'news', data: newsData.slice(i, i + 5) });
@@ -753,8 +736,10 @@
             const s = page.data;
             const colorClass = s.change > 0 ? 'color-up' : (s.change < 0 ? 'color-down' : 'color-flat');
             const sign = s.change > 0 ? '+' : '';
+            
+            // Added margin-top: -60px to shift Stock layout upper
             wrapper.innerHTML = `
-                <div class="center-layout">
+                <div class="center-layout" style="margin-top: -60px;">
                     <div class="stock-symbol">${s.symbol}</div>
                     <div class="stock-price">${s.price}</div>
                     <div class="stock-change ${colorClass}">${sign}${s.change} (${sign}${s.pct}%)</div>
@@ -764,8 +749,10 @@
         else if (page.type === 'news') {
             mainHeader.style.opacity = '1';
             let titlesHtml = page.data.map(t => `<div class="news-title-row">${t}</div>`).join('');
+            
+            // Added margin-top: -60px to shift News layout upper
             wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 6px;">
+                <div class="center-layout" style="justify-content: center; gap: 6px; margin-top: -60px;">
                     <div class="news-tag">📰 News / 新聞</div>
                     ${titlesHtml}
                 </div>
@@ -776,13 +763,10 @@
             page.data.forEach(line => {
                 const card = document.createElement('div'); 
                 card.className = 'kiosk-card-route';
-                
-                // Color changed to #ffffff for all companies as requested
-                const badgeColor = '#ffffff';
 
                 let identHtml = `
                     <div class="route-ident-block">
-                        <div class="route-badge" style="color: ${badgeColor}; text-shadow: var(--text-glow);">${line.route}</div>
+                        <div class="route-badge" style="text-shadow: var(--text-glow);">${line.route}</div>
                         <div class="dest-col">
                             <div class="dest-tc">往 ${line.dest_tc}</div>
                             <div class="dest-en">To ${line.dest_en}</div>
@@ -852,7 +836,7 @@
         drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
     }
 
-    // --- Background Logic ---
+    // --- Advanced Background Logic ---
     let dbInstance = null, slideshowIntervalId = null, blobUrlsToClean = [];
     
     function initIndexedDBEngine() { 
@@ -888,12 +872,37 @@
         }); 
     }
 
-    function clearIndexedDBBackgrounds() { 
-        return new Promise(res => { 
-            if(!dbInstance) return res(); 
-            const req = dbInstance.transaction("bgs", "readwrite").objectStore("bgs").clear(); 
-            req.onsuccess = res; 
-        }); 
+    function deleteBlobFromIndexedDB(id) {
+        return new Promise((res, rej) => {
+            if(!dbInstance) return rej();
+            const tx = dbInstance.transaction("bgs", "readwrite");
+            tx.objectStore("bgs").delete(id);
+            tx.oncomplete = res;
+        });
+    }
+
+    async function renderSettingsPhotoList() {
+        const records = await getAllBlobsFromIndexedDB();
+        const list = document.getElementById('photoList');
+        list.innerHTML = '';
+        if (records.length === 0) {
+            list.innerHTML = '<div style="font-size:0.85rem; color:var(--text-sub);">Default sky backgrounds active</div>';
+        } else {
+            records.forEach((rec, idx) => {
+                list.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center;">
+                        <span>Custom Photo ${idx + 1}</span>
+                        <button onclick="deletePhoto(${rec.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold;">X</button>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    async function deletePhoto(id) {
+        await deleteBlobFromIndexedDB(id);
+        await renderSettingsPhotoList();
+        await loadAndRenderBackgroundSlideshow();
     }
 
     async function loadAndRenderBackgroundSlideshow() {
@@ -912,12 +921,6 @@
             "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80", 
             "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80"
         ];
-        
-        if(records.length > 0) {
-            document.getElementById('uploadStatusText').textContent = `✓ ${records.length} custom photos`; 
-        } else {
-            document.getElementById('uploadStatusText').textContent = '';
-        }
         
         sources.forEach((s, i) => { 
             const d = document.createElement('div'); 
@@ -939,9 +942,12 @@
     document.getElementById('photoInput').addEventListener('change', async e => {
         const f = Array.from(e.target.files); 
         if(!f.length) return; 
-        document.getElementById('uploadStatusText').textContent = `Processing...`; 
-        await clearIndexedDBBackgrounds();
         
+        const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'photoInput\').click()"]');
+        const oldText = uploadBtn.textContent;
+        uploadBtn.textContent = "Processing...";
+        
+        // Append new files without deleting old ones
         for(let file of f) { 
             try { 
                 const b = await new Promise((res,rej) => { 
@@ -962,14 +968,12 @@
                 await saveBlobToIndexedDB(b); 
             } catch(e){} 
         }
+        
+        uploadBtn.textContent = oldText;
+        await renderSettingsPhotoList();
         await loadAndRenderBackgroundSlideshow();
     });
 
-    async function clearCustomPhotos() { 
-        await clearIndexedDBBackgrounds(); 
-        await loadAndRenderBackgroundSlideshow(); 
-    }
-    
     async function requestWakeLock() { 
         try { 
             if ('wakeLock' in navigator) {
