@@ -1,12 +1,23 @@
-// Version: 1.0.17
-const CACHE_NAME = 'inhome-cache-v1';
+// Version: 1.0.20
+const CACHE_NAME = 'inhome-cache-v1.0.20';
 
 self.addEventListener('install', (e) => {
-    self.skipWaiting();
+    self.skipWaiting(); // Force the waiting service worker to become the active service worker.
 });
 
 self.addEventListener('activate', (e) => {
-    e.waitUntil(clients.claim());
+    // Tell the active service worker to take control of the page immediately.
+    e.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName); // Delete old caches
+                    }
+                })
+            );
+        }).then(() => clients.claim())
+    );
 });
 
 self.addEventListener('fetch', (e) => {
