@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Updated Font to Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <title>INHOME</title>
     <link rel="manifest" href="manifest.json">
     <style>
@@ -14,7 +15,8 @@
             --text-sub: #94A3B8;
             --bg-base: #0B132B;
             --text-glow: 0 2px 8px rgba(0, 0, 0, 0.8);
-            --sans-serif-stack: 'Inter', system-ui, sans-serif;
+            /* Updated font family stack */
+            --sans-serif-stack: 'Outfit', system-ui, sans-serif;
         }
 
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -272,7 +274,7 @@
         
         initClockAndDateLabels();
         await initIndexedDBEngine();
-        await renderSettingsPhotoList(); // Render individual photos in settings
+        await renderSettingsPhotoList();
         await loadAndRenderBackgroundSlideshow();
         
         fetchHKOWeather(); 
@@ -356,7 +358,6 @@
     // --- Weather Logic ---
     let currentWeatherHTML = '', currentWarnHTML = '', currentTempText = '--°C';
 
-    // FIX: Updated HKO Rainstorm image names from wraina to just raina, rainr, rainb
     const warnMap = {
         'WFIREY': 'firey', 'WFIRER': 'firer', 'WRAINA': 'raina', 'WRAINR': 'rainr', 'WRAINB': 'rainb',
         'TC1': 'tc1', 'TC3': 'tc3', 'TC8NE': 'tc8ne', 'TC8NW': 'tc8nw', 'TC8SE': 'tc8se', 'TC8SW': 'tc8sw', 'TC9': 'tc9', 'TC10': 'tc10',
@@ -737,7 +738,6 @@
             const colorClass = s.change > 0 ? 'color-up' : (s.change < 0 ? 'color-down' : 'color-flat');
             const sign = s.change > 0 ? '+' : '';
             
-            // Added margin-top: -60px to shift Stock layout upper
             wrapper.innerHTML = `
                 <div class="center-layout" style="margin-top: -60px;">
                     <div class="stock-symbol">${s.symbol}</div>
@@ -750,7 +750,6 @@
             mainHeader.style.opacity = '1';
             let titlesHtml = page.data.map(t => `<div class="news-title-row">${t}</div>`).join('');
             
-            // Added margin-top: -60px to shift News layout upper
             wrapper.innerHTML = `
                 <div class="center-layout" style="justify-content: center; gap: 6px; margin-top: -60px;">
                     <div class="news-tag">📰 News / 新聞</div>
@@ -947,7 +946,6 @@
         const oldText = uploadBtn.textContent;
         uploadBtn.textContent = "Processing...";
         
-        // Append new files without deleting old ones
         for(let file of f) { 
             try { 
                 const b = await new Promise((res,rej) => { 
