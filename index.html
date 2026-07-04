@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#04070d">
     <title>INHOME</title>
 
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiSU5IT01FIOWxgeaXpSIsInNob3J0X25hbWUiOiJJTkhPTUUiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzA0MDcwZCIsInRoZW1lX2NvbG9yIjoiIzA0MDcwZCIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7Y2hhcnNldD11dGYtOCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NwYXRoIGZpbGw9JyUyM2ZmZmZmZicgZD0nTTUwIDE1IEwxNSA1MCBMMjIgNTAgTDIyIDg1IEw0MiA4NSBMNDIgNjAgTDU4IDYwIEw1OCA4NSBMNzggODUgTDc4IDUwIEw4NSA1MCBaJy8lM0UlM0Mvc3ZnJTNFIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
+    <link rel="manifest" href="manifest.json">
 
     <style>
         :root {
@@ -96,15 +96,15 @@
         /* News Page Specifics */
         .news-tag { font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 700; color: #ff9f43; margin-bottom: 15px; letter-spacing: 0.05em; text-shadow: var(--text-glow); }
         .news-title-row { 
-            font-size: clamp(1.2rem, 2.5vw, 1.8rem); 
+            font-size: clamp(1rem, 2vw, 1.4rem); 
             font-weight: 700; 
             line-height: 1.3; 
             width: 95%; 
             background: var(--glass-card); 
             border: 1px solid var(--glass-border); 
-            border-radius: 12px; 
-            padding: 14px 24px;
-            margin-bottom: 10px;
+            border-radius: 10px; 
+            padding: 12px 20px;
+            margin-bottom: 8px;
             backdrop-filter: blur(10px);
             text-align: left;
             text-shadow: var(--text-glow);
@@ -559,14 +559,10 @@
         if (pagesQueue.length <= 1) return;
         if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
         
-        // Find the index of the first Bus ETA page
         const firstBusIndex = pagesQueue.findIndex(p => p.type === 'bus');
-        
-        // If clicking while NOT on a bus page, jump instantly to the Bus ETA page
         if (pagesQueue[currentPageIndex].type !== 'bus' && firstBusIndex !== -1) {
             transitionToNextPage(firstBusIndex);
         } else {
-            // If already on a bus page (or no bus pages exist), just go to the next normal page
             transitionToNextPage();
         }
         
