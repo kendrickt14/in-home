@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Load Open Sans (Weights 400, 500, and 600) -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Load Roboto (Google's UI Font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
     <title>INHOME</title>
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --glass-card: rgba(15, 25, 55, 0.5);
             --glass-border: rgba(100, 150, 250, 0.2);
-            --text-main: #E2E8F0;
-            --text-sub: #94A3B8;
+            --text-main: #FFFFFF;
+            --text-sub: #FFFFFF; /* Forced all sub-text to white */
             --bg-base: #0B132B;
             --text-glow: 0 2px 8px rgba(0, 0, 0, 0.8);
-            /* Open Sans for English, Chiron GoRound TC for Chinese */
-            --sans-serif-stack: 'Open Sans', 'Chiron GoRound TC', system-ui, sans-serif;
+            /* Roboto for English, Chiron GoRound TC for Chinese */
+            --sans-serif-stack: 'Roboto', 'Chiron GoRound TC', system-ui, sans-serif;
         }
 
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        html { font-size: 16px; transition: font-size 0.3s ease; }
+        html { font-size: 15px; transition: font-size 0.3s ease; }
         html, body { 
             margin: 0; padding: 0; height: 100dvh; width: 100vw; 
             overflow: hidden; user-select: none; -webkit-user-select: none; 
@@ -88,7 +88,7 @@
 
         /* Main Grid */
         .grid-layout { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        #pageWrapper { display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; transition: opacity 0.4s; }
+        #pageWrapper { display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; transition: opacity 0.4s; }
         #pageWrapper.dimmed { opacity: 0; }
 
         /* Center Page Styles */
@@ -97,56 +97,54 @@
             width: 100%; height: 100%; text-shadow: var(--text-glow); text-align: center; 
         }
         #centerLiveTime { font-size: clamp(5rem, 15vw, 10rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
-        #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; opacity: 0.9; margin-top: 15px; }
+        #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; margin-top: 15px; }
         .center-weather-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 20px; }
         #centerWeatherWarnings { display: flex; justify-content: center; align-items: center; gap: 8px; }
 
-        /* Weather Forecast Specifics (Smaller) */
+        /* Weather Forecast Specifics */
         .forecast-card { 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
             padding: 15px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            flex: 1; min-width: 150px; /* Widened slightly to fit fonts */
-            backdrop-filter: blur(10px); 
+            flex: 1; min-width: 140px; backdrop-filter: blur(10px); 
         }
-        .fc-date { font-size: clamp(0.9rem, 2vw, 1.3rem); font-weight: 600; margin-bottom: 2px; line-height: 1.1; }
-        .fc-week { font-size: clamp(0.8rem, 1.8vw, 1.1rem); font-weight: 500; margin-bottom: 10px; opacity: 0.85; }
+        .fc-date { font-size: clamp(0.9rem, 2vw, 1.3rem); font-weight: 600; margin-bottom: 2px; line-height: 1.1; color: #FFFFFF; }
+        .fc-week { font-size: clamp(0.8rem, 1.8vw, 1.1rem); font-weight: 500; margin-bottom: 10px; color: #FFFFFF; }
         .fc-icon { width: clamp(35px, 6vw, 50px); height: auto; margin-bottom: 10px; }
-        .fc-temp { font-size: clamp(1.1rem, 2.5vw, 1.5rem); font-weight: 600; }
+        .fc-temp { font-size: clamp(1.1rem, 2.5vw, 1.5rem); font-weight: 600; color: #FFFFFF; }
 
         /* Stock Page Specifics */
-        .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 600; opacity: 0.8; letter-spacing: 0.05em; }
-        .stock-price { font-size: clamp(6rem, 15vw, 11rem); font-weight: 600; line-height: 1; margin: 10px 0; }
+        .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 600; letter-spacing: 0.05em; color: #FFFFFF; }
+        .stock-price { font-size: clamp(6rem, 15vw, 11rem); font-weight: 600; line-height: 1; margin: 10px 0; color: #FFFFFF; }
         .stock-change { font-size: clamp(1.5rem, 4vw, 3rem); font-weight: 600; }
-        .color-up { color: #6EE7B7; }
-        .color-down { color: #FDA4AF; }
-        .color-flat { color: #9ca3af; }
+        .color-up { color: #6EE7B7; } /* Kept green for up */
+        .color-down { color: #FDA4AF; } /* Kept red for down */
+        .color-flat { color: #FFFFFF; }
 
         /* News Page Specifics */
         .news-title-row { 
             font-size: clamp(1rem, 2vw, 1.4rem); font-weight: 600; line-height: 1.3; width: 95%; 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 10px; 
             padding: 12px 20px; margin-bottom: 8px; backdrop-filter: blur(10px); 
-            text-align: left; text-shadow: var(--text-glow); 
+            text-align: left; text-shadow: var(--text-glow); color: #FFFFFF;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         /* Bus Cards */
         .kiosk-card-route { 
             background: var(--glass-card); border: 1px solid var(--glass-border); backdrop-filter: blur(16px); 
-            border-radius: 16px; padding: 1.2rem 1.5rem; display: flex; align-items: center; 
-            justify-content: space-between; gap: 20px; 
+            border-radius: 16px; padding: 1rem 1.5rem; /* Reduced padding slightly to ensure 4 cards fit */
+            display: flex; align-items: center; justify-content: space-between; gap: 20px; 
         }
         .route-ident-block { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
         .route-badge { 
             color: #FFFFFF !important; 
             font-weight: 600; font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 0.9; 
-            width: 160px; /* Widened to ensure 4 digits fit securely with new fonts */
-            text-align: center; padding: 0; background: none; flex-shrink: 0; 
+            width: 160px; text-align: center; padding: 0; background: none; flex-shrink: 0; 
         }
         .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-        .dest-tc { font-size: 1.6rem; font-weight: 600; white-space: nowrap; } 
-        .dest-en { font-size: 1rem; opacity: 0.85; white-space: nowrap; }
-        .stop-spec-box { margin-top: 4px; font-size: 0.85rem; color: var(--text-sub); }
+        .dest-tc { font-size: 1.6rem; font-weight: 600; white-space: nowrap; color: #FFFFFF; } 
+        .dest-en { font-size: 1rem; white-space: nowrap; color: #FFFFFF; opacity: 1; }
+        .stop-spec-box { margin-top: 4px; font-size: 0.85rem; color: #FFFFFF; opacity: 1; }
 
         /* Aligned 2-Row Timeline */
         .arrivals-timeline { 
@@ -155,17 +153,18 @@
         }
         .arrival-node { 
             background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border); border-radius: 12px; 
-            padding: 12px; min-width: 150px; /* Widened for font spacing */
-            text-align: center; flex-shrink: 0;
+            padding: 12px; min-width: 140px; text-align: center; flex-shrink: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .arrival-node:first-child { background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(52, 211, 153, 0.5); }
         .arrival-node.imminent { background: rgba(220, 38, 38, 0.35) !important; border: 1px solid rgba(248, 113, 113, 0.6) !important; animation: pulse 1.5s infinite; }
         
-        .node-mins { font-size: 1.2rem; font-weight: 600; text-shadow: var(--text-glow); line-height: 1.2; margin-bottom: 6px; display: block; white-space: nowrap; }
-        .arrival-node:first-child .node-mins { color: #34d399; }
-        .arrival-node.imminent .node-mins { color: #f87171; }
-        .node-clock { font-size: 0.95rem; font-weight: 600; opacity: 0.95; line-height: 1; display: block; }
+        .node-mins { font-size: 1.2rem; font-weight: 600; text-shadow: var(--text-glow); line-height: 1.2; margin-bottom: 6px; display: block; white-space: nowrap; color: #FFFFFF; }
+        .node-clock { font-size: 0.95rem; font-weight: 600; line-height: 1; display: block; color: #FFFFFF; }
+
+        /* Override red/green text colors to white as requested */
+        .arrival-node:first-child .node-mins { color: #FFFFFF; }
+        .arrival-node.imminent .node-mins { color: #FFFFFF; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         @media (max-width: 768px) {
@@ -200,10 +199,10 @@
     </div>
 
     <div id="settingsDrawer" class="settings-drawer" onclick="event.stopPropagation()">
-        <h3 style="margin-top:0; font-weight: 600;">INHOME Settings</h3>
+        <h3 style="margin-top:0; font-weight: 600; color: #FFFFFF;">INHOME Settings</h3>
         
         <div style="margin-bottom: 20px;">
-            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Layout Size</p>
+            <p style="font-size:0.85rem; color:#FFFFFF; margin: 0 0 8px 0;">Layout Size</p>
             <div style="display:flex; gap: 8px;">
                 <button id="btnSizeSmall" onclick="setLayoutSize('small')" class="layout-btn">Small</button>
                 <button id="btnSizeMedium" onclick="setLayoutSize('medium')" class="layout-btn">Med</button>
@@ -212,18 +211,18 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Stock Tracker (Yahoo Finance)</p>
+            <p style="font-size:0.85rem; color:#FFFFFF; margin: 0 0 8px 0;">Stock Tracker</p>
             <div style="display:flex; gap: 8px; margin-bottom: 10px;">
-                <input type="text" id="stockInput" class="input-field" placeholder="e.g. 0005.HK or AAPL" style="margin-bottom:0;" />
+                <input type="text" id="stockInput" class="input-field" placeholder="e.g. 0005.HK" style="margin-bottom:0;" />
                 <button onclick="addStock()" class="action-btn" style="background:#10b981; border:none;">Add</button>
             </div>
             <div id="stockList" style="display:flex; flex-direction:column; gap:6px; max-height: 120px; overflow-y: auto;"></div>
         </div>
 
         <div style="margin-bottom: 10px;">
-            <p style="font-size:0.85rem; color:var(--text-sub); margin: 0 0 8px 0;">Background Photos</p>
+            <p style="font-size:0.85rem; color:#FFFFFF; margin: 0 0 8px 0;">Background Photos</p>
             <div style="display:flex; gap:12px; align-items:center; margin-bottom: 10px;">
-                <button onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Add Photos</button>
+                <button onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Add</button>
                 <input type="file" id="photoInput" multiple accept="image/*" style="display:none;" />
             </div>
             <div id="photoList" style="display:flex; flex-direction:column; gap:6px; max-height: 150px; overflow-y: auto;"></div>
@@ -259,7 +258,7 @@
     // --- Global State ---
     let wakeLockInstance = null;
     let autoPageRotationInterval = null;
-    let itemsPerPage = 3; 
+    let itemsPerPage = 4; // LOCKED to 4 routes per page to ensure consistency
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], pagesQueue = [];
@@ -267,7 +266,7 @@
 
     // --- Boot Sequence ---
     window.addEventListener('DOMContentLoaded', async () => {
-        setLayoutSize(localStorage.getItem('layoutSize') || 'medium');
+        setLayoutSize(localStorage.getItem('layoutSize') || 'large');
         renderSettingsStockList();
         
         initClockAndDateLabels();
@@ -289,10 +288,6 @@
         }, 120000); 
 
         requestWakeLock();
-        window.addEventListener('resize', () => { 
-            calculateDynamicItemsPerPage(); 
-            rebuildQueueAndRender(); 
-        });
     });
 
     // --- Date & Time ---
@@ -328,33 +323,21 @@
         if (size === 'small') { 
             root.style.fontSize = '12px'; 
             document.getElementById('btnSizeSmall').classList.add('active'); 
-        } else if (size === 'large') { 
-            root.style.fontSize = '20px'; 
-            document.getElementById('btnSizeLarge').classList.add('active'); 
-        } else { 
-            root.style.fontSize = '16px'; 
+        } else if (size === 'medium') { 
+            root.style.fontSize = '15px'; 
             document.getElementById('btnSizeMedium').classList.add('active'); 
-            size = 'medium'; 
+        } else { 
+            root.style.fontSize = '18px'; // NEW Large
+            document.getElementById('btnSizeLarge').classList.add('active'); 
+            size = 'large'; 
         }
         
         localStorage.setItem('layoutSize', size);
-        setTimeout(() => { 
-            calculateDynamicItemsPerPage(); 
-            rebuildQueueAndRender(); 
-        }, 350); 
-    }
-
-    function calculateDynamicItemsPerPage() {
-        const grid = document.getElementById('dashboardGrid');
-        if (!grid) return;
-        const availableHeight = grid.clientHeight;
-        const estimatedCardHeight = window.innerWidth <= 768 ? 160 : 130; 
-        let calc = Math.floor(availableHeight / estimatedCardHeight);
-        itemsPerPage = calc < 1 ? 1 : calc;
+        setTimeout(() => { rebuildQueueAndRender(); }, 350); 
     }
 
     // --- Weather Logic ---
-    let currentWeatherHTML = '', currentWarnHTML = '', currentTempText = '--°C';
+    let currentWarnHTML = '';
 
     const warnMap = {
         'WFIREY': 'firey', 'WFIRER': 'firer', 'WRAINA': 'raina', 'WRAINR': 'rainr', 'WRAINB': 'rainb',
@@ -369,14 +352,10 @@
                 const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${weatherRes.icon[0]}.png`;
                 document.getElementById('weatherIcon').src = iconSrc; 
                 document.getElementById('weatherIcon').style.display = 'block';
-                currentWeatherHTML = iconSrc; 
             }
             if (weatherRes && weatherRes.temperature && weatherRes.temperature.data) {
                 const obsTemp = weatherRes.temperature.data.find(t => t.place === "香港天文台") || weatherRes.temperature.data[0];
-                if (obsTemp) {
-                    currentTempText = `${obsTemp.value}°C`; 
-                    document.getElementById('temperature').textContent = currentTempText;
-                }
+                if (obsTemp) document.getElementById('temperature').textContent = `${obsTemp.value}°C`;
             }
 
             const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r => r.json());
@@ -402,7 +381,7 @@
                             this.style.display = 'none'; 
                             const span = document.createElement('span'); 
                             span.textContent = warn.name; 
-                            span.style.color = '#fca5a5'; 
+                            span.style.color = '#FFFFFF'; 
                             span.style.fontSize = '0.8rem';
                             warningContainer.appendChild(span);
                         };
@@ -423,22 +402,17 @@
             if (res && res.weatherForecast) {
                 forecastData = res.weatherForecast;
             }
-        } catch(e) {
-            console.error("Forecast error", e);
-        }
+        } catch(e) {}
     }
 
     // --- Stock Logic ---
-    function getSavedStocks() { 
-        return JSON.parse(localStorage.getItem('inhome_stocks') || '[]'); 
-    }
-    
+    function getSavedStocks() { return JSON.parse(localStorage.getItem('inhome_stocks') || '[]'); }
     function renderSettingsStockList() {
         const list = document.getElementById('stockList'); 
         list.innerHTML = '';
         getSavedStocks().forEach(sym => {
             list.innerHTML += `
-                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center;">
+                <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center; color:white;">
                     <span>${sym}</span>
                     <button onclick="removeStock('${sym}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:600;">X</button>
                 </div>
@@ -451,28 +425,20 @@
         if(!val) return;
         const stocks = getSavedStocks();
         if(!stocks.includes(val)) {
-            stocks.push(val); 
-            localStorage.setItem('inhome_stocks', JSON.stringify(stocks));
-            document.getElementById('stockInput').value = ''; 
-            renderSettingsStockList();
-            await fetchStocks(); 
-            rebuildQueueAndRender();
+            stocks.push(val); localStorage.setItem('inhome_stocks', JSON.stringify(stocks));
+            document.getElementById('stockInput').value = ''; renderSettingsStockList();
+            await fetchStocks(); rebuildQueueAndRender();
         }
     }
 
     async function removeStock(sym) {
         const stocks = getSavedStocks().filter(s => s !== sym);
         localStorage.setItem('inhome_stocks', JSON.stringify(stocks)); 
-        renderSettingsStockList();
-        await fetchStocks(); 
-        rebuildQueueAndRender();
+        renderSettingsStockList(); await fetchStocks(); rebuildQueueAndRender();
     }
 
     async function fetchStocks() {
-        const symbols = getSavedStocks(); 
-        stockData = []; 
-        if(symbols.length === 0) return;
-
+        const symbols = getSavedStocks(); stockData = []; if(symbols.length === 0) return;
         for (const sym of symbols) {
             try {
                 const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}`)}`;
@@ -481,16 +447,9 @@
                     const meta = res.chart.result[0].meta;
                     const price = meta.regularMarketPrice;
                     const prev = meta.chartPreviousClose;
-                    stockData.push({ 
-                        symbol: sym, 
-                        price: price.toFixed(2), 
-                        change: (price - prev).toFixed(2), 
-                        pct: (((price - prev) / prev) * 100).toFixed(2) 
-                    });
+                    stockData.push({ symbol: sym, price: price.toFixed(2), change: (price - prev).toFixed(2), pct: (((price - prev) / prev) * 100).toFixed(2) });
                 }
-            } catch(e) {
-                console.error("Stock fetch error", e);
-            }
+            } catch(e) {}
         }
     }
 
@@ -500,29 +459,16 @@
         try {
             const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
             const res = await fetch(rssUrl).then(r => r.json());
-            if (res && res.items) {
-                newsData = res.items.map(item => item.title).slice(0, 15);
-            }
-        } catch(e) {
-            console.error("News fetch error", e);
-        }
+            if (res && res.items) newsData = res.items.map(item => item.title).slice(0, 15);
+        } catch(e) {}
     }
 
     // --- Bus ETA Logic ---
     function acquireDeviceLocation() {
-        if (!navigator.geolocation) { 
-            rebuildQueueAndRender(); 
-            return; 
-        }
+        if (!navigator.geolocation) { rebuildQueueAndRender(); return; }
         navigator.geolocation.getCurrentPosition(
-            async (pos) => { 
-                userLat = pos.coords.latitude; 
-                userLng = pos.coords.longitude; 
-                await fetchAndAggregateRouteFeeds(); 
-            }, 
-            () => { 
-                rebuildQueueAndRender(); 
-            }, 
+            async (pos) => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; await fetchAndAggregateRouteFeeds(); }, 
+            () => { rebuildQueueAndRender(); }, 
             { enableHighAccuracy: true, timeout: 10000 }
         );
     }
@@ -535,87 +481,45 @@
 
             const nearbyIds = allStops.filter(stop => {
                 const dist = calculateDist(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
-                if (dist <= 350) { 
-                    cachedStopMap[stop.stop] = { 
-                        name_tc: stop.name_tc, 
-                        name_en: stop.name_en, 
-                        distance: dist 
-                    }; 
-                    return true; 
-                }
+                if (dist <= 350) { cachedStopMap[stop.stop] = { name_tc: stop.name_tc, name_en: stop.name_en, distance: dist }; return true; }
                 return false;
             }).map(s => s.stop);
 
-            if (nearbyIds.length === 0) { 
-                compiledRouteArray = []; 
-                rebuildQueueAndRender(); 
-                return; 
-            }
+            if (nearbyIds.length === 0) { compiledRouteArray = []; rebuildQueueAndRender(); return; }
 
-            const aggregatedRoutes = {}; 
-            const routeDistances = {};
+            const aggregatedRoutes = {}; const routeDistances = {};
 
             const fetchPromises = nearbyIds.map(async (stopId) => {
                 try {
                     const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`).then(r => r.json());
                     (etaRes.data || []).forEach(item => {
                         if (!item.eta) return;
-                        
-                        const co = item.co || "KMB"; 
-                        const routeKey = `${co}_${item.route}_${item.dir}`; 
+                        const co = item.co || "KMB"; const routeKey = `${co}_${item.route}_${item.dir}`; 
                         const dist = cachedStopMap[stopId] ? cachedStopMap[stopId].distance : 9999;
-                        
                         if (routeDistances[routeKey] !== undefined && routeDistances[routeKey] < dist) return;
-                        
                         if (routeDistances[routeKey] !== undefined && routeDistances[routeKey] > dist) {
-                            for (const k in aggregatedRoutes) { 
-                                if (k.startsWith(routeKey + "_")) delete aggregatedRoutes[k]; 
-                            }
+                            for (const k in aggregatedRoutes) { if (k.startsWith(routeKey + "_")) delete aggregatedRoutes[k]; }
                         }
-                        
-                        routeDistances[routeKey] = dist; 
-                        const finalKey = `${routeKey}_${stopId}`;
-                        
+                        routeDistances[routeKey] = dist; const finalKey = `${routeKey}_${stopId}`;
                         if (!aggregatedRoutes[finalKey]) {
-                            aggregatedRoutes[finalKey] = { 
-                                company: co, 
-                                route: item.route, 
-                                dest_tc: item.dest_tc, 
-                                dest_en: item.dest_en, 
-                                stopDistance: dist, 
-                                stopNameTc: cachedStopMap[stopId].name_tc, 
-                                stopNameEn: cachedStopMap[stopId].name_en, 
-                                arrivals: [] 
-                            };
+                            aggregatedRoutes[finalKey] = { company: co, route: item.route, dest_tc: item.dest_tc, dest_en: item.dest_en, stopDistance: dist, stopNameTc: cachedStopMap[stopId].name_tc, stopNameEn: cachedStopMap[stopId].name_en, arrivals: [] };
                         }
-                        if (!aggregatedRoutes[finalKey].arrivals.some(a => a.eta === item.eta)) { 
-                            aggregatedRoutes[finalKey].arrivals.push({ eta: item.eta }); 
-                        }
+                        if (!aggregatedRoutes[finalKey].arrivals.some(a => a.eta === item.eta)) { aggregatedRoutes[finalKey].arrivals.push({ eta: item.eta }); }
                     });
-                } catch(e) {
-                    // Fail silently
-                }
+                } catch(e) {}
             });
 
             await Promise.all(fetchPromises);
-            
             compiledRouteArray = Object.values(aggregatedRoutes).map(line => { 
-                line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta)); 
-                return line; 
+                line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta)); return line; 
             }).sort((a, b) => a.stopDistance - b.stopDistance);
-            
             rebuildQueueAndRender();
-        } catch (e) {
-            console.error("Aggregation error", e);
-        }
+        } catch (e) {}
     }
 
     function calculateDist(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const p1 = lat1 * Math.PI/180;
-        const p2 = lat2 * Math.PI/180;
-        const dp = (lat2-lat1) * Math.PI/180;
-        const dl = (lon2-lon1) * Math.PI/180;
+        const R = 6371e3; const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180;
+        const dp = (lat2-lat1) * Math.PI/180; const dl = (lon2-lon1) * Math.PI/180;
         const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
@@ -623,7 +527,6 @@
     // --- Page Queue System ---
     function rebuildQueueAndRender() {
         pagesQueue = [];
-        
         pagesQueue.push({ type: 'clock' });
 
         if (compiledRouteArray.length > 0) {
@@ -633,40 +536,24 @@
             }
         }
 
-        if (forecastData && forecastData.length > 0) {
-            pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
-        }
-
-        stockData.forEach(stk => {
-            pagesQueue.push({ type: 'stock', data: stk });
-        });
-
+        if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
+        stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
         if (newsData.length > 0) {
-            for (let i = 0; i < newsData.length; i += 5) {
-                pagesQueue.push({ type: 'news', data: newsData.slice(i, i + 5) });
-            }
+            for (let i = 0; i < newsData.length; i += 5) pagesQueue.push({ type: 'news', data: newsData.slice(i, i + 5) });
         }
 
-        if (currentPageIndex >= pagesQueue.length) {
-            currentPageIndex = 0;
-        }
-        
+        if (currentPageIndex >= pagesQueue.length) currentPageIndex = 0;
         renderActivePage();
         
-        if (!autoPageRotationInterval) {
-            autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
-        }
+        if (!autoPageRotationInterval) autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
     }
 
     function renderActivePage() {
         const wrapper = document.getElementById('pageWrapper');
         const mainHeader = document.getElementById('mainHeader');
-        
         if (pagesQueue.length === 0) return;
         
-        const page = pagesQueue[currentPageIndex]; 
-        wrapper.innerHTML = '';
-
+        const page = pagesQueue[currentPageIndex]; wrapper.innerHTML = '';
         const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const daysEnArr = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
@@ -674,23 +561,17 @@
             mainHeader.style.opacity = '0'; 
             const now = new Date(); 
             const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-            
             const daysTc = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
             const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
             const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEnArr[now.getDay()]})`;
             const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
 
-            let weatherHTML = '';
-            if (currentWeatherHTML) {
-                weatherHTML = `<img src="${currentWeatherHTML}" style="width: clamp(30px, 5vw, 45px); height: auto; display: block;" />`;
-            }
-
+            // Weather icon removed from clock page as requested
             wrapper.innerHTML = `
                 <div class="center-layout" style="margin-top: -80px;">
                     <div id="centerLiveTime">${timeString}</div>
                     <div id="centerLiveDate">${fullDateString}</div>
                     <div class="center-weather-row">
-                        ${weatherHTML}
                         <div id="centerWeatherWarnings">${currentWarnHTML}</div>
                     </div>
                 </div>
@@ -700,11 +581,9 @@
             mainHeader.style.opacity = '1';
             let forecastHtml = page.data.map(f => {
                 const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${f.ForecastIcon}.png`;
-                
                 const year = parseInt(f.forecastDate.substring(0, 4), 10);
                 const monthNum = parseInt(f.forecastDate.substring(4, 6), 10);
                 const dayNum = parseInt(f.forecastDate.substring(6, 8), 10);
-                
                 const dateObj = new Date(year, monthNum - 1, dayNum);
                 const dayEn = daysEnArr[dateObj.getDay()];
                 
@@ -723,19 +602,13 @@
                     </div>
                 `;
             }).join('');
-            
-            wrapper.innerHTML = `
-                <div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap;">
-                    ${forecastHtml}
-                </div>
-            `;
+            wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap;">${forecastHtml}</div>`;
         }
         else if (page.type === 'stock') {
             mainHeader.style.opacity = '1';
             const s = page.data;
             const colorClass = s.change > 0 ? 'color-up' : (s.change < 0 ? 'color-down' : 'color-flat');
             const sign = s.change > 0 ? '+' : '';
-            
             wrapper.innerHTML = `
                 <div class="center-layout" style="margin-top: -60px;">
                     <div class="stock-symbol">${s.symbol}</div>
@@ -746,14 +619,8 @@
         }
         else if (page.type === 'news') {
             mainHeader.style.opacity = '1';
-            // The tag line is removed below:
             let titlesHtml = page.data.map(t => `<div class="news-title-row">${t}</div>`).join('');
-            
-            wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 6px; margin-top: -60px;">
-                    ${titlesHtml}
-                </div>
-            `;
+            wrapper.innerHTML = `<div class="center-layout" style="justify-content: center; gap: 6px; margin-top: -60px;">${titlesHtml}</div>`;
         }
         else if (page.type === 'bus') {
             mainHeader.style.opacity = '1';
@@ -806,25 +673,18 @@
         if(pagesQueue.length <= 1) return;
         const wrapper = document.getElementById('pageWrapper'); 
         wrapper.classList.add('dimmed'); 
-        
         setTimeout(() => { 
             currentPageIndex = targetIndex !== null ? targetIndex : (currentPageIndex + 1) % pagesQueue.length; 
-            renderActivePage(); 
-            wrapper.classList.remove('dimmed'); 
+            renderActivePage(); wrapper.classList.remove('dimmed'); 
         }, 400);
     }
 
     function handleGlobalTap(event) {
         if (pagesQueue.length <= 1) return;
         if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
-        
         const firstBusIndex = pagesQueue.findIndex(p => p.type === 'bus');
-        if (pagesQueue[currentPageIndex].type !== 'bus' && firstBusIndex !== -1) {
-            transitionToNextPage(firstBusIndex);
-        } else {
-            transitionToNextPage();
-        }
-        
+        if (pagesQueue[currentPageIndex].type !== 'bus' && firstBusIndex !== -1) transitionToNextPage(firstBusIndex);
+        else transitionToNextPage();
         autoPageRotationInterval = setInterval(() => { transitionToNextPage(); }, TIME_PER_PAGE_MS);
     }
 
@@ -839,14 +699,8 @@
     function initIndexedDBEngine() { 
         return new Promise((resolve) => { 
             const req = indexedDB.open("BusKioskDB", 1); 
-            req.onupgradeneeded = e => { 
-                if(!e.target.result.objectStoreNames.contains("bgs")) {
-                    e.target.result.createObjectStore("bgs", {keyPath: "id", autoIncrement: true}); 
-                }
-            }; 
-            req.onsuccess = e => { 
-                dbInstance = e.target.result; resolve(); 
-            }; 
+            req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("bgs")) e.target.result.createObjectStore("bgs", {keyPath: "id", autoIncrement: true}); }; 
+            req.onsuccess = e => { dbInstance = e.target.result; resolve(); }; 
             req.onerror = () => resolve(); 
         }); 
     }
@@ -855,8 +709,7 @@
         return new Promise((res, rej) => { 
             if(!dbInstance) return rej(); 
             const tx = dbInstance.transaction("bgs", "readwrite"); 
-            tx.objectStore("bgs").add({blob: blob}); 
-            tx.oncomplete = res; 
+            tx.objectStore("bgs").add({blob: blob}); tx.oncomplete = res; 
         }); 
     }
 
@@ -864,8 +717,7 @@
         return new Promise(res => { 
             if(!dbInstance) return res([]); 
             const req = dbInstance.transaction("bgs", "readonly").objectStore("bgs").getAll(); 
-            req.onsuccess = () => res(req.result||[]); 
-            req.onerror = () => res([]); 
+            req.onsuccess = () => res(req.result||[]); req.onerror = () => res([]); 
         }); 
     }
 
@@ -873,21 +725,18 @@
         return new Promise((res, rej) => {
             if(!dbInstance) return rej();
             const tx = dbInstance.transaction("bgs", "readwrite");
-            tx.objectStore("bgs").delete(id);
-            tx.oncomplete = res;
+            tx.objectStore("bgs").delete(id); tx.oncomplete = res;
         });
     }
 
     async function renderSettingsPhotoList() {
         const records = await getAllBlobsFromIndexedDB();
-        const list = document.getElementById('photoList');
-        list.innerHTML = '';
-        if (records.length === 0) {
-            list.innerHTML = '<div style="font-size:0.85rem; color:var(--text-sub);">Default sky backgrounds active</div>';
-        } else {
+        const list = document.getElementById('photoList'); list.innerHTML = '';
+        if (records.length === 0) list.innerHTML = '<div style="font-size:0.85rem; color:#FFFFFF;">Default sky backgrounds active</div>';
+        else {
             records.forEach((rec, idx) => {
                 list.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center;">
+                    <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center; color:white;">
                         <span>Custom Photo ${idx + 1}</span>
                         <button onclick="deletePhoto(${rec.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:600;">X</button>
                     </div>
@@ -896,87 +745,54 @@
         }
     }
 
-    async function deletePhoto(id) {
-        await deleteBlobFromIndexedDB(id);
-        await renderSettingsPhotoList();
-        await loadAndRenderBackgroundSlideshow();
-    }
+    async function deletePhoto(id) { await deleteBlobFromIndexedDB(id); await renderSettingsPhotoList(); await loadAndRenderBackgroundSlideshow(); }
 
     async function loadAndRenderBackgroundSlideshow() {
-        const container = document.getElementById('bgSlideContainer'); 
-        container.innerHTML = '';
+        const container = document.getElementById('bgSlideContainer'); container.innerHTML = '';
         if(slideshowIntervalId) clearInterval(slideshowIntervalId);
-        blobUrlsToClean.forEach(URL.revokeObjectURL); 
-        blobUrlsToClean = [];
+        blobUrlsToClean.forEach(URL.revokeObjectURL); blobUrlsToClean = [];
         
         const records = await getAllBlobsFromIndexedDB();
-        const sources = records.length > 0 ? records.map(r => { 
-            const u = URL.createObjectURL(r.blob); 
-            blobUrlsToClean.push(u); 
-            return u; 
-        }) : [
+        const sources = records.length > 0 ? records.map(r => { const u = URL.createObjectURL(r.blob); blobUrlsToClean.push(u); return u; }) : [
             "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80", 
             "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80"
         ];
         
         sources.forEach((s, i) => { 
-            const d = document.createElement('div'); 
-            d.className = `bg-slide ${i===0?'active':''}`; 
-            d.style.backgroundImage = `url('${s}')`; 
-            container.appendChild(d); 
+            const d = document.createElement('div'); d.className = `bg-slide ${i===0?'active':''}`; 
+            d.style.backgroundImage = `url('${s}')`; container.appendChild(d); 
         });
         
         let bgIndex = 0; 
         slideshowIntervalId = setInterval(() => { 
-            const s = document.querySelectorAll('.bg-slide'); 
-            if(s.length <= 1) return; 
-            s[bgIndex].classList.remove('active'); 
-            bgIndex = (bgIndex + 1) % s.length; 
-            s[bgIndex].classList.add('active'); 
+            const s = document.querySelectorAll('.bg-slide'); if(s.length <= 1) return; 
+            s[bgIndex].classList.remove('active'); bgIndex = (bgIndex + 1) % s.length; s[bgIndex].classList.add('active'); 
         }, 12000);
     }
 
     document.getElementById('photoInput').addEventListener('change', async e => {
-        const f = Array.from(e.target.files); 
-        if(!f.length) return; 
-        
+        const f = Array.from(e.target.files); if(!f.length) return; 
         const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'photoInput\').click()"]');
-        const oldText = uploadBtn.textContent;
-        uploadBtn.textContent = "Processing...";
+        const oldText = uploadBtn.textContent; uploadBtn.textContent = "Processing...";
         
         for(let file of f) { 
             try { 
                 const b = await new Promise((res,rej) => { 
-                    const r = new FileReader(); 
-                    r.onload = ev => { 
-                        const i = new Image(); 
-                        i.onload = () => { 
-                            const c = document.createElement('canvas'); 
-                            c.width = Math.min(1920, i.width); 
-                            c.height = Math.min(1080, i.height); 
-                            c.getContext('2d').drawImage(i,0,0,c.width,c.height); 
-                            c.toBlob(res,'image/jpeg',0.85); 
-                        }; 
-                        i.src = ev.target.result; 
-                    }; 
-                    r.readAsDataURL(file); 
+                    const r = new FileReader(); r.onload = ev => { 
+                        const i = new Image(); i.onload = () => { 
+                            const c = document.createElement('canvas'); c.width = Math.min(1920, i.width); c.height = Math.min(1080, i.height); 
+                            c.getContext('2d').drawImage(i,0,0,c.width,c.height); c.toBlob(res,'image/jpeg',0.85); 
+                        }; i.src = ev.target.result; 
+                    }; r.readAsDataURL(file); 
                 }); 
                 await saveBlobToIndexedDB(b); 
             } catch(e){} 
         }
         
-        uploadBtn.textContent = oldText;
-        await renderSettingsPhotoList();
-        await loadAndRenderBackgroundSlideshow();
+        uploadBtn.textContent = oldText; await renderSettingsPhotoList(); await loadAndRenderBackgroundSlideshow();
     });
 
-    async function requestWakeLock() { 
-        try { 
-            if ('wakeLock' in navigator) {
-                wakeLockInstance = await navigator.wakeLock.request('screen'); 
-            }
-        } catch (e) {} 
-    }
+    async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLockInstance = await navigator.wakeLock.request('screen'); } } catch (e) {} }
 </script>
 </body>
 </html>
