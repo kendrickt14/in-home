@@ -52,8 +52,8 @@
             text-shadow: var(--text-glow); flex-shrink: 0; transition: opacity 0.4s; 
         }
         .clock-box { display: flex; flex-direction: column; }
-        #liveTime { font-size: clamp(3rem, 7vw, 5rem); font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
-        #liveDate { font-size: clamp(1rem, 2.5vw, 1.5rem); font-weight: 600; margin-top: 8px; letter-spacing: 0.02em; }
+        #liveTime { font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+        #liveDate { font-size: clamp(0.95rem, 2.5vw, 1.5rem); font-weight: 600; margin-top: 8px; letter-spacing: 0.02em; }
 
         .header-right { display: flex; align-items: center; gap: 15px; }
         .weather-box { display: flex; align-items: center; gap: 12px; }
@@ -95,12 +95,15 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             width: 100%; height: 100%; text-shadow: var(--text-glow); text-align: center; 
         }
-        #centerLiveTime { font-size: clamp(5rem, 15vw, 10rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
-        #centerLiveDate { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 600; margin-top: 15px; }
+        #centerLiveTime { font-size: clamp(4.5rem, 15vw, 10rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
+        #centerLiveDate { font-size: clamp(1.2rem, 4vw, 2.5rem); font-weight: 600; margin-top: 15px; }
         .center-weather-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 20px; }
         #centerWeatherWarnings { display: flex; justify-content: center; align-items: center; gap: 8px; }
 
         /* Weather Forecast Specifics */
+        .forecast-container {
+            display: flex; flex-direction: row; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%;
+        }
         .forecast-card { 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
             padding: 15px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -113,7 +116,7 @@
 
         /* Stock Page Specifics */
         .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 600; letter-spacing: 0.05em; color: #FFFFFF; }
-        .stock-price { font-size: clamp(6rem, 15vw, 11rem); font-weight: 600; line-height: 1; margin: 10px 0; color: #FFFFFF; }
+        .stock-price { font-size: clamp(5rem, 15vw, 11rem); font-weight: 600; line-height: 1; margin: 10px 0; color: #FFFFFF; }
         .stock-change { font-size: clamp(1.5rem, 4vw, 3rem); font-weight: 600; }
         .color-up { color: #6EE7B7; } 
         .color-down { color: #FDA4AF; } 
@@ -121,7 +124,7 @@
 
         /* News Page Specifics */
         .news-title-row { 
-            font-size: clamp(1rem, 2vw, 1.4rem); font-weight: 600; line-height: 1.3; width: 95%; 
+            font-size: clamp(0.95rem, 2vw, 1.4rem); font-weight: 600; line-height: 1.3; width: 95%; 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 10px; 
             padding: 12px 20px; margin-bottom: 8px; backdrop-filter: blur(10px); 
             text-align: left; text-shadow: var(--text-glow); color: #FFFFFF;
@@ -137,41 +140,57 @@
         .route-ident-block { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
         .route-badge { 
             color: #FFFFFF !important; 
-            font-weight: 600; font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 0.9; 
+            font-weight: 600; font-size: clamp(2.2rem, 6vw, 3.5rem); line-height: 0.9; 
             width: 160px; text-align: center; padding: 0; background: none; flex-shrink: 0; 
         }
         .dest-col { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-        .dest-tc { font-size: 1.6rem; font-weight: 600; white-space: nowrap; color: #FFFFFF; } 
-        .dest-en { font-size: 1rem; white-space: nowrap; color: #FFFFFF; opacity: 1; }
+        .dest-tc { font-size: 1.5rem; font-weight: 600; white-space: nowrap; color: #FFFFFF; } 
+        .dest-en { font-size: 0.95rem; white-space: nowrap; color: #FFFFFF; opacity: 1; }
         .stop-spec-box { margin-top: 4px; font-size: 0.85rem; color: #FFFFFF; opacity: 1; }
 
         /* Aligned 2-Row Timeline */
         .arrivals-timeline { 
             display: flex; align-items: center; gap: 12px; overflow-x: auto; 
-            padding: 10px 0; -webkit-overflow-scrolling: touch; 
+            padding: 8px 0; -webkit-overflow-scrolling: touch; 
         }
         .arrival-node { 
             background: rgba(0, 0, 0, 0.35); border: 1px solid var(--glass-border); border-radius: 12px; 
-            padding: 12px; min-width: 140px; text-align: center; flex-shrink: 0;
+            padding: 12px; min-width: 135px; text-align: center; flex-shrink: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .arrival-node:first-child { background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(52, 211, 153, 0.5); }
         .arrival-node.imminent { background: rgba(220, 38, 38, 0.35) !important; border: 1px solid rgba(248, 113, 113, 0.6) !important; animation: pulse 1.5s infinite; }
         
-        .node-mins { font-size: 1.2rem; font-weight: 600; text-shadow: var(--text-glow); line-height: 1.2; margin-bottom: 6px; display: block; white-space: nowrap; color: #FFFFFF; }
-        .node-clock { font-size: 0.95rem; font-weight: 600; line-height: 1; display: block; color: #FFFFFF; }
+        .node-mins { font-size: 1.15rem; font-weight: 600; text-shadow: var(--text-glow); line-height: 1.2; margin-bottom: 6px; display: block; white-space: nowrap; color: #FFFFFF; }
+        .node-clock { font-size: 0.9rem; font-weight: 600; line-height: 1; display: block; color: #FFFFFF; }
 
         .arrival-node:first-child .node-mins { color: #FFFFFF; }
         .arrival-node.imminent .node-mins { color: #FFFFFF; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* --- MOBILE & PHONE SPECIFIC ENHANCEMENTS --- */
         @media (max-width: 768px) {
-            .kiosk-card-route { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .route-ident-block { width: 100%; gap: 16px; }
-            .arrivals-timeline { width: 100%; justify-content: flex-start; }
-            .dashboard-header { flex-direction: column; align-items: flex-start; gap: 16px; }
-            .header-right { width: 100%; justify-content: space-between; }
-            .forecast-card { min-width: 110px; padding: 15px 10px; }
+            body { padding: 12px; }
+            .dashboard-header { margin-bottom: 12px; padding-bottom: 12px; }
+            #temperature { font-size: 1.5rem; }
+            .settings-drawer { width: calc(100vw - 24px); right: 12px; top: 70px; }
+            
+            /* Bus Cards on Mobile: Stack cleanly and let timelines scroll full width */
+            .kiosk-card-route { flex-direction: column; align-items: stretch; gap: 10px; padding: 0.8rem 1rem; }
+            .route-ident-block { width: 100%; gap: 12px; justify-content: flex-start; }
+            .route-badge { width: 105px; text-align: left; font-size: 2.2rem; }
+            .dest-tc { font-size: 1.3rem; }
+            .arrivals-timeline { width: 100%; justify-content: flex-start; padding: 4px 0; }
+            .arrival-node { min-width: 115px; padding: 10px 8px; }
+            
+            /* Forecast on Mobile: Clean horizontal scrolling instead of messy wrapping */
+            .forecast-container { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }
+            .forecast-card { min-width: 110px; padding: 12px 8px; flex: 0 0 auto; }
+            
+            /* Remove negative top margins on mobile to avoid header collisions */
+            .center-layout { margin-top: 0 !important; }
+            .news-title-row { width: 100%; padding: 10px 14px; margin-bottom: 6px; }
         }
     </style>
 </head>
@@ -250,12 +269,19 @@
 
     let wakeLockInstance = null;
     let autoPageRotationInterval = null;
-    let itemsPerPage = 4; 
+    let itemsPerPage = 4; // Default for tablets
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let autoBusPageCount = 0; 
     let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
+
+    // Dynamic Mobile/Tablet Item Calculator
+    function getDynamicItemsPerPage() {
+        if (window.innerWidth <= 600) return 3; // Phone portrait: 3 items
+        if (window.innerHeight <= 500) return 2; // Phone landscape: 2 items
+        return 4; // Tablet & Desktop: Locked to 4 items
+    }
 
     window.addEventListener('DOMContentLoaded', async () => {
         setLayoutSize(localStorage.getItem('layoutSize') || 'large');
@@ -279,6 +305,15 @@
         setInterval(async () => {
             if(userLat && userLng) await fetchAndAggregateRouteFeeds();
         }, 60000); 
+
+        // Automatically adapt routes when switching orientation or between phone/tablet
+        window.addEventListener('resize', () => {
+            const newCount = getDynamicItemsPerPage();
+            if (newCount !== itemsPerPage) {
+                itemsPerPage = newCount;
+                rebuildQueueAndRender();
+            }
+        });
 
         requestWakeLock();
     });
@@ -497,6 +532,7 @@
     }
 
     function rebuildQueueAndRender() {
+        itemsPerPage = getDynamicItemsPerPage();
         pagesQueue = [];
         pagesQueue.push({ type: 'clock' });
 
@@ -571,7 +607,7 @@
                     </div>
                 `;
             }).join('');
-            wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap;">${forecastHtml}</div>`;
+            wrapper.innerHTML = `<div class="forecast-container">${forecastHtml}</div>`;
         }
         else if (page.type === 'stock') {
             mainHeader.style.opacity = '1';
@@ -606,7 +642,7 @@
                     </div>
                 `;
                 
-                let timelineHtml = `<div class="arrivals-timeline">`;
+                let timelineHtml = `<div class="arrivals-timeline" onclick="event.stopPropagation()">`;
                 const activeArrivals = line.arrivals.slice(0, 3);
 
                 if (activeArrivals.length === 0) {
@@ -733,7 +769,6 @@
         
         const records = await getAllBlobsFromIndexedDB();
         
-        // Includes 5 default GitHub backgrounds
         const sources = records.length > 0 ? records.map(r => { const u = URL.createObjectURL(r.blob); blobUrlsToClean.push(u); return u; }) : [
             "./default-bg-1.jpg",
             "./default-bg-2.jpg",
