@@ -102,7 +102,7 @@
 
         /* Weather Forecast Specifics */
         .forecast-container {
-            display: flex; flex-direction: row; gap: 15px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%;
+            display: flex; flex-direction: row; gap: 15px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; margin: auto 0;
         }
         .forecast-card { 
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
@@ -323,7 +323,7 @@
             
             const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
             const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEn[now.getDay()]})`;
-            const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
+            const fullDateString = `${tcDate}    ${enDate}`;
 
             document.getElementById('liveTime').textContent = timeString;
             document.getElementById('liveDate').textContent = fullDateString;
@@ -414,7 +414,6 @@
         } catch(e) {}
     }
 
-    // Default Fallback Stocks Added Here
     function getSavedStocks() { 
         let saved = localStorage.getItem('inhome_stocks');
         if (!saved) {
@@ -467,7 +466,6 @@
         rebuildQueueAndRender();
     }
 
-    // News Filter with Smart Fallback Added Here
     async function fetchNews() {
         newsData = [];
         try {
@@ -481,7 +479,6 @@
                     return !isNaN(pubTime) && (pubTime >= fourHoursAgo);
                 });
                 
-                // Fallback: if no news occurred in the last 4 hrs, grab latest 10 so page doesn't vanish
                 if (filtered.length === 0) filtered = res.items.slice(0, 10);
                 
                 newsData = filtered.map(item => item.title).slice(0, 15);
@@ -588,7 +585,7 @@
             const daysTc = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
             const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
             const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEnArr[now.getDay()]})`;
-            const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
+            const fullDateString = `${tcDate}    ${enDate}`;
 
             wrapper.innerHTML = `
                 <div class="center-layout" style="margin-top: -80px;">
@@ -624,7 +621,6 @@
                     </div>
                 `;
             }).join('');
-            // Centered wrapper applied here
             wrapper.innerHTML = `<div class="center-layout"><div class="forecast-container">${forecastHtml}</div></div>`;
         }
         else if (page.type === 'stock') {
@@ -809,7 +805,7 @@
 
     document.getElementById('photoInput').addEventListener('change', async e => {
         const f = Array.from(e.target.files); if(!f.length) return; 
-        const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'photoInput\').click()"]');
+        const uploadBtn = document.querySelector('button[onclick="document.getElementById('photoInput').click()"]');
         const oldText = uploadBtn.textContent; uploadBtn.textContent = "Processing...";
         
         for(let file of f) { 
