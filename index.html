@@ -121,11 +121,12 @@
 
         /* News Page Specifics */
         .news-title-row { 
-            font-size: clamp(1rem, 2vw, 1.3rem); font-weight: 600; line-height: 1.3; width: 100%; 
-            background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 10px; 
-            padding: 12px 20px; margin-bottom: 6px; backdrop-filter: blur(10px); 
+            font-size: clamp(1.5rem, 3.5vw, 2.4rem); font-weight: 600; line-height: 1.4; width: 100%; 
+            background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
+            padding: 18px 28px; margin-bottom: 8px; backdrop-filter: blur(14px); 
             text-align: left; text-shadow: var(--text-glow); color: #FFFFFF;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis; word-break: break-word;
         }
 
         /* Bus Cards */
@@ -182,7 +183,7 @@
             .arrival-node { min-width: 115px; padding: 10px 8px; }
             
             .forecast-card { min-width: 110px; padding: 12px 8px; }
-            .news-title-row { width: 100%; padding: 10px 14px; margin-bottom: 6px; }
+            .news-title-row { width: 100%; padding: 14px 18px; margin-bottom: 8px; font-size: clamp(1.25rem, 4.5vw, 1.7rem); }
         }
     </style>
 </head>
@@ -283,10 +284,11 @@
         await renderSettingsPhotoList();
         await loadAndRenderBackgroundSlideshow();
         
+        // Launch all network fetchers in parallel without blocking!
         fetchHKOWeather(); 
         fetchForecast();
-        await fetchStocks();
-        await fetchNews();
+        fetchStocks();
+        fetchNews();
         acquireDeviceLocation(); 
 
         setInterval(() => { 
@@ -462,41 +464,74 @@
     }
 
     async function fetchNews() {
-        // Do NOT clear newsData = [] at the start! Keep cached news if a network error occurs.
-        try {
-            // Method 1: Fetch raw XML via allorigins proxy to bypass rss2json rate limits
-            const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
-            const res = await fetch(xmlUrl).then(r => r.text());
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(res, "text/xml");
-            const items = Array.from(xmlDoc.querySelectorAll("item"));
-            
-            if (items.length > 0) {
-                const titles = items.map(item => {
-                    const titleNode = item.querySelector("title");
-                    return titleNode ? titleNode.textContent.trim() : "";
-                }).filter(t => t.length > 0);
+        // Multi-tier reliable feed URLs (Official RTHK + HK Gov feeds)
+        const feedUrls = [
+            'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml',
+            'https://news.rthk.hk/rthk/ch/rss/c_expressnews_clocal.xml',
+            'https://www.news.gov.hk/tc/common/html/topstories.rss.xml',
+            'https://www.news.gov.hk/tc/common/html/ticker.rss.xml'
+        ];
 
-                if (titles.length > 0) {
-                    newsData = titles.slice(0, 15);
-                    rebuildQueueAndRender();
-                    return;
+        // Method 1: Try RSS2JSON API first
+        for (const feedUrl of feedUrls) {
+            try {
+                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
+                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
+                if (res && res.items && res.items.length > 0) {
+                    const titles = res.items.map(item => item.title).filter(t => t && t.trim().length > 0);
+                    if (titles.length > 0) {
+                        newsData = titles.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
                 }
-            }
-        } catch(e) {
-            console.warn("XML fetch failed, trying RSS2JSON fallback...", e);
+            } catch(e) {}
         }
 
-        // Method 2: Fallback to rss2json if XML proxy fails
-        try {
-            const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
-            const res = await fetch(rssUrl).then(r => r.json());
-            if (res && res.items && res.items.length > 0) {
-                newsData = res.items.map(item => item.title).slice(0, 15);
-                rebuildQueueAndRender();
-            }
-        } catch(e) {
-            console.error("All news fetch methods failed:", e);
+        // Method 2: Fallback to AllOrigins XML Proxy
+        for (const feedUrl of feedUrls) {
+            try {
+                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
+                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(res, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                if (items.length > 0) {
+                    const titles = items.map(item => {
+                        const titleNode = item.querySelector("title");
+                        return titleNode ? titleNode.textContent.trim() : "";
+                    }).filter(t => t.length > 0);
+
+                    if (titles.length > 0) {
+                        newsData = titles.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Method 3: Fallback to CodeTabs CORS proxy
+        for (const feedUrl of feedUrls) {
+            try {
+                const xmlUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
+                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(res, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                if (items.length > 0) {
+                    const titles = items.map(item => {
+                        const titleNode = item.querySelector("title");
+                        return titleNode ? titleNode.textContent.trim() : "";
+                    }).filter(t => t.length > 0);
+
+                    if (titles.length > 0) {
+                        newsData = titles.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
         }
     }
 
@@ -572,8 +607,14 @@
 
         if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
+        
+        // Always include news page in queue so it never vanishes!
+        const newsPerPage = Math.max(2, Math.min(itemsPerPage, 3));
         if (newsData.length > 0) {
-            for (let i = 0; i < newsData.length; i += 5) pagesQueue.push({ type: 'news', data: newsData.slice(i, i + 5) });
+            for (let i = 0; i < newsData.length; i += newsPerPage) pagesQueue.push({ type: 'news', data: newsData.slice(i, i + newsPerPage) });
+        } else {
+            // Placeholder/loading state when news feed is loading or temporarily blocked
+            pagesQueue.push({ type: 'news', data: ["載入即時新聞中... Loading RTHK / Gov News...", "正在連接新聞通訊社... Please wait...", "如長時間未能顯示，將於下次自動更新時重試。"] });
         }
 
         if (currentPageIndex >= pagesQueue.length) currentPageIndex = 0;
@@ -653,7 +694,7 @@
             mainHeader.style.opacity = '1';
             let titlesHtml = page.data.map(t => `<div class="news-title-row">${t}</div>`).join('');
             wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 8px; width: 100%; max-width: 900px; margin: 0 auto; padding: 10px 20px;">
+                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
                     ${titlesHtml}
                 </div>`;
         }
