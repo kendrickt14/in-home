@@ -165,13 +165,24 @@
         .arrival-node.imminent .node-mins { color: #FFFFFF; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* --- MOBILE & PHONE SPECIFIC ENHANCEMENTS --- */
         @media (max-width: 768px) {
-            .kiosk-card-route { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .route-ident-block { width: 100%; gap: 16px; }
-            .arrivals-timeline { width: 100%; justify-content: flex-start; }
-            .dashboard-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            body { padding: 12px; }
+            .dashboard-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; }
             .header-right { width: 100%; justify-content: space-between; }
-            .forecast-card { min-width: 110px; padding: 15px 10px; }
+            #temperature { font-size: 1.5rem; }
+            .settings-drawer { width: calc(100vw - 24px); right: 12px; top: 70px; }
+            
+            .kiosk-card-route { flex-direction: column; align-items: stretch; gap: 10px; padding: 0.8rem 1rem; }
+            .route-ident-block { width: 100%; gap: 12px; justify-content: flex-start; }
+            .route-badge { width: 105px; text-align: left; font-size: 2.2rem; }
+            .dest-tc { font-size: 1.3rem; }
+            .arrivals-timeline { width: 100%; justify-content: flex-start; padding: 4px 0; }
+            .arrival-node { min-width: 115px; padding: 10px 8px; }
+            
+            .forecast-card { min-width: 110px; padding: 12px 8px; }
+            .news-title-row { width: 100%; padding: 10px 14px; margin-bottom: 6px; }
         }
     </style>
 </head>
@@ -220,7 +231,7 @@
         <div style="margin-bottom: 10px;">
             <p style="font-size:0.85rem; color:#FFFFFF; margin: 0 0 8px 0;">Background Photos</p>
             <div style="display:flex; gap:12px; align-items:center; margin-bottom: 10px;">
-                <button onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Add</button>
+                <button id="uploadPhotoBtn" onclick="document.getElementById('photoInput').click()" class="action-btn" style="background:#3b82f6; border:none; padding:8px 16px;">📷 Add</button>
                 <input type="file" id="photoInput" multiple accept="image/*" style="display:none;" />
             </div>
             <div id="photoList" style="display:flex; flex-direction:column; gap:6px; max-height: 150px; overflow-y: auto;"></div>
@@ -257,6 +268,12 @@
     let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
 
+    function getDynamicItemsPerPage() {
+        if (window.innerWidth <= 600) return 3;
+        if (window.innerHeight <= 500) return 2;
+        return 4;
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
         setLayoutSize(localStorage.getItem('layoutSize') || 'large');
         renderSettingsStockList();
@@ -279,6 +296,14 @@
         setInterval(async () => {
             if(userLat && userLng) await fetchAndAggregateRouteFeeds();
         }, 60000); 
+
+        window.addEventListener('resize', () => {
+            const newCount = getDynamicItemsPerPage();
+            if (newCount !== itemsPerPage) {
+                itemsPerPage = newCount;
+                rebuildQueueAndRender();
+            }
+        });
 
         requestWakeLock();
     });
@@ -377,11 +402,23 @@
     async function fetchForecast() {
         try {
             const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc').then(r => r.json());
-            if (res && res.weatherForecast) forecastData = res.weatherForecast;
+            if (res && res.weatherForecast) {
+                forecastData = res.weatherForecast;
+                rebuildQueueAndRender();
+            }
         } catch(e) {}
     }
 
-    function getSavedStocks() { return JSON.parse(localStorage.getItem('inhome_stocks') || '[]'); }
+    function getSavedStocks() {
+        let saved = localStorage.getItem('inhome_stocks');
+        if (!saved || JSON.parse(saved).length === 0) {
+            const defaults = ['0005.HK', '2800.HK', 'AAPL'];
+            localStorage.setItem('inhome_stocks', JSON.stringify(defaults));
+            return defaults;
+        }
+        return JSON.parse(saved);
+    }
+
     function renderSettingsStockList() {
         const list = document.getElementById('stockList'); list.innerHTML = '';
         getSavedStocks().forEach(sym => {
@@ -421,6 +458,7 @@
                 }
             } catch(e) {}
         }
+        rebuildQueueAndRender();
     }
 
     async function fetchNews() {
@@ -428,12 +466,16 @@
         try {
             const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
             const res = await fetch(rssUrl).then(r => r.json());
-            if (res && res.items) {
+            if (res && res.items && res.items.length > 0) {
                 const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
-                newsData = res.items.filter(item => {
-                    let pubTime = new Date(item.pubDate.replace(/-/g, '/')).getTime();
-                    return isNaN(pubTime) ? true : (pubTime >= fourHoursAgo);
-                }).map(item => item.title).slice(0, 15);
+                let filtered = res.items.filter(item => {
+                    let pubTime = new Date(item.pubDate).getTime();
+                    if (isNaN(pubTime)) pubTime = new Date(item.pubDate.replace(/-/g, '/')).getTime();
+                    return !isNaN(pubTime) && (pubTime >= fourHoursAgo);
+                });
+                if (filtered.length === 0) filtered = res.items.slice(0, 10);
+                newsData = filtered.map(item => item.title).slice(0, 15);
+                rebuildQueueAndRender();
             }
         } catch(e) {}
     }
@@ -497,6 +539,7 @@
     }
 
     function rebuildQueueAndRender() {
+        itemsPerPage = getDynamicItemsPerPage();
         pagesQueue = [];
         pagesQueue.push({ type: 'clock' });
 
@@ -571,7 +614,7 @@
                     </div>
                 `;
             }).join('');
-            wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap;">${forecastHtml}</div>`;
+            wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap; align-content: center;">${forecastHtml}</div>`;
         }
         else if (page.type === 'stock') {
             mainHeader.style.opacity = '1';
@@ -606,7 +649,7 @@
                     </div>
                 `;
                 
-                let timelineHtml = `<div class="arrivals-timeline">`;
+                let timelineHtml = `<div class="arrivals-timeline" onclick="event.stopPropagation()">`;
                 const activeArrivals = line.arrivals.slice(0, 3);
 
                 if (activeArrivals.length === 0) {
@@ -756,7 +799,7 @@
 
     document.getElementById('photoInput').addEventListener('change', async e => {
         const f = Array.from(e.target.files); if(!f.length) return; 
-        const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'photoInput\').click()"]');
+        const uploadBtn = document.getElementById('uploadPhotoBtn');
         const oldText = uploadBtn.textContent; uploadBtn.textContent = "Processing...";
         
         for(let file of f) { 
