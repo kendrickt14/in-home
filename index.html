@@ -462,22 +462,42 @@
     }
 
     async function fetchNews() {
-        newsData = [];
+        // Do NOT clear newsData = [] at the start! Keep cached news if a network error occurs.
+        try {
+            // Method 1: Fetch raw XML via allorigins proxy to bypass rss2json rate limits
+            const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
+            const res = await fetch(xmlUrl).then(r => r.text());
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(res, "text/xml");
+            const items = Array.from(xmlDoc.querySelectorAll("item"));
+            
+            if (items.length > 0) {
+                const titles = items.map(item => {
+                    const titleNode = item.querySelector("title");
+                    return titleNode ? titleNode.textContent.trim() : "";
+                }).filter(t => t.length > 0);
+
+                if (titles.length > 0) {
+                    newsData = titles.slice(0, 15);
+                    rebuildQueueAndRender();
+                    return;
+                }
+            }
+        } catch(e) {
+            console.warn("XML fetch failed, trying RSS2JSON fallback...", e);
+        }
+
+        // Method 2: Fallback to rss2json if XML proxy fails
         try {
             const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml')}`;
             const res = await fetch(rssUrl).then(r => r.json());
             if (res && res.items && res.items.length > 0) {
-                const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
-                let filtered = res.items.filter(item => {
-                    let pubTime = new Date(item.pubDate).getTime();
-                    if (isNaN(pubTime)) pubTime = new Date(item.pubDate.replace(/-/g, '/')).getTime();
-                    return !isNaN(pubTime) && (pubTime >= fourHoursAgo);
-                });
-                if (filtered.length === 0) filtered = res.items.slice(0, 10);
-                newsData = filtered.map(item => item.title).slice(0, 15);
+                newsData = res.items.map(item => item.title).slice(0, 15);
                 rebuildQueueAndRender();
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("All news fetch methods failed:", e);
+        }
     }
 
     function acquireDeviceLocation() {
