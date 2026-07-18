@@ -525,28 +525,137 @@
 
     
     function extractTimeAndTitle(text, pubDate = '') {
-        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
+        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*(?:HKT\s*)?\d{1,2}:\d{2}(?:\:\d{2})?\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*(?:HKT\s*)?\d{1,2}:\d{2}\b|\b(?:HKT\s*)?\d{1,2}:\d{2}\b)/i;
         const match = text.match(timeRegex);
         if (match) {
-            let timeStr = match[0].trim();
-            let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+            let fullTimeMatch = match[0].trim();
+            let titleStr = text.replace(fullTimeMatch, '').trim();
+            titleStr = titleStr.replace(/\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*(?:HKT)?/gi, '').trim();
+            titleStr = titleStr.replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
             titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
-            let cleanTime = timeStr;
-            const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
+
+            let cleanTime = fullTimeMatch;
+            const timeOnlyMatch = fullTimeMatch.match(/\b(\d{1,2}:\d{2})\b/);
             if (timeOnlyMatch) {
                 cleanTime = timeOnlyMatch[1];
             }
-            return { time: cleanTime, title: titleStr };
-        } else if (pubDate) {
-            let cleanTime = '';
-            const timeOnlyMatch = pubDate.match(/\b(\d{1,2}:\d{2})\b/);
-            if (timeOnlyMatch) {
-                cleanTime = timeOnlyMatch[1];
+            if (titleStr.length > 5 && !/^[\d\s\-/:.,HKT年-月日]+$/i.test(titleStr)) {
+                return { time: cleanTime, title: titleStr };
             }
-            let titleStr = text.replace(/^交通消息[:：\s]*/i, '').trim();
-            return { time: cleanTime, title: titleStr };
+            return null;
+        } 
+        
+        if (pubDate) {
+            let cleanTime = '即時 Now';
+            const dateObj = new Date(pubDate);
+            if (!isNaN(dateObj.getTime())) {
+                cleanTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            } else {
+                const timeOnlyMatch = pubDate.match(/\b(\d{1,2}:\d{2})\b/);
+                if (timeOnlyMatch) cleanTime = timeOnlyMatch[1];
+            }
+            let titleStr = text.replace(/^交通消息[:：\s]*/i, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+            if (titleStr.length > 5 && !/^[\d\s\-/:.,HKT年-月日]+$/i.test(titleStr)) {
+                return { time: cleanTime, title: titleStr };
+            }
+            return null;
         }
-        return { time: '', title: text };
+        
+        if (text.length > 8 && !/^[\d\s\-/:.,HKT年-月日]+$/i.test(text)) {
+            return { time: '即時 Now', title: text };
+        }
+        return null;
+    }
+
+    function parseTrafficHtml(htmlText) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        const results = [];
+        
+        // Check list items, table rows, paragraphs, and block divs
+        const candidates = Array.from(doc.body.querySelectorAll('li, tr, .item, .inner, p, div, article, td'));
+        
+        candidates.forEach(el => {
+            const text = el.textContent.trim().replace(/\s+/g, ' ');
+            if (text.length < 12 || text.length > 350) return;
+            if (text.includes('Copyright') || text.includes('版權所有') || text.includes('香港電台網站')) return;
+
+            const res = extractTimeAndTitle(text);
+            if (res && res.title && res.title.length > 5) {
+                if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) {
+                    results.push(res);
+                }
+            }
+        });
+        return results;
+    }
+
+    async function fetchTrafficNews() {
+        const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
+        const proxyUrls = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+        ];
+
+        // Method 1: Scrape official RTHK Radio Traffic News Website directly via proxy
+        for (const proxyUrl of proxyUrls) {
+            try {
+                const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
+                if (htmlText && htmlText.length > 500) {
+                    const parsedItems = parseTrafficHtml(htmlText);
+                    if (parsedItems.length > 0) {
+                        trafficData = parsedItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Method 2: Fallback to RTHK Traffic RSS Feeds (with timestamp extraction)
+        const trafficFeeds = [
+            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
+            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml'
+        ];
+        
+        for (const feed of trafficFeeds) {
+            try {
+                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
+                if (res && res.items && res.items.length > 0) {
+                    const validItems = res.items.map(item => extractTimeAndTitle(item.title, item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
+                    if (validItems.length > 0) {
+                        trafficData = validItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        for (const feed of trafficFeeds) {
+            try {
+                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
+                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(res, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                if (items.length > 0) {
+                    const validItems = items.map(item => {
+                        const titleNode = item.querySelector("title");
+                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                        const titleText = titleNode ? titleNode.textContent.trim() : "";
+                        const dateText = dateNode ? dateNode.textContent.trim() : "";
+                        return extractTimeAndTitle(titleText, dateText);
+                    }).filter(t => t && t.title && t.title.length > 5);
+                    if (validItems.length > 0) {
+                        trafficData = validItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
     }
 
     function parseTrafficHtml(htmlText) {
