@@ -111,6 +111,17 @@
         .fc-icon { width: clamp(35px, 6vw, 50px); height: auto; margin-bottom: 10px; }
         .fc-temp { font-size: clamp(1.1rem, 2.5vw, 1.5rem); font-weight: 600; color: #FFFFFF; }
 
+        /* Hourly Weather Specifics */
+        .hourly-card { 
+            background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
+            padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            flex: 1; min-width: 120px; backdrop-filter: blur(12px); 
+        }
+        .hc-time { font-size: clamp(1rem, 2.2vw, 1.3rem); font-weight: 600; margin-bottom: 8px; color: #FFFFFF; text-shadow: var(--text-glow); }
+        .hc-icon { font-size: clamp(2.2rem, 5.5vw, 3.5rem); margin: 6px 0 10px 0; line-height: 1; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+        .hc-temp { font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 600; color: #FFFFFF; margin-bottom: 8px; text-shadow: var(--text-glow); }
+        .hc-rain { font-size: clamp(0.85rem, 1.8vw, 1.1rem); font-weight: 600; color: #93C5FD; background: rgba(30, 58, 138, 0.45); border: 1px solid rgba(96, 165, 250, 0.3); padding: 4px 10px; border-radius: 12px; }
+
         /* Stock Page Specifics */
         .stock-symbol { font-size: clamp(2rem, 5vw, 4rem); font-weight: 600; letter-spacing: 0.05em; color: #FFFFFF; }
         .stock-price { font-size: clamp(6rem, 15vw, 11rem); font-weight: 600; line-height: 1; margin: 10px 0; color: #FFFFFF; }
@@ -183,6 +194,7 @@
             .arrival-node { min-width: 115px; padding: 10px 8px; }
             
             .forecast-card { min-width: 110px; padding: 12px 8px; }
+            .hourly-card { min-width: 100px; padding: 12px 6px; }
             .news-title-row { width: 100%; padding: 14px 18px; margin-bottom: 8px; font-size: clamp(1.25rem, 4.5vw, 1.7rem); }
         }
     </style>
@@ -266,7 +278,7 @@
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let autoBusPageCount = 0; 
-    let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], pagesQueue = [];
+    let compiledRouteArray = [], stockData = [], newsData = [], trafficData = [], forecastData = [], hourlyData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
 
     function getDynamicItemsPerPage() {
@@ -289,10 +301,12 @@
         fetchForecast();
         fetchStocks();
         fetchNews();
+        fetchTrafficNews();
+        fetchHourlyWeather();
         acquireDeviceLocation(); 
 
         setInterval(() => { 
-            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); 
+            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); fetchTrafficNews(); fetchHourlyWeather();
         }, 60000); 
 
         setInterval(async () => {
@@ -401,6 +415,52 @@
         } catch (e) {} rebuildQueueAndRender(); 
     }
 
+    
+    async function fetchHourlyWeather() {
+        try {
+            const lat = userLat || 22.3193;
+            const lng = userLng || 114.1694;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,precipitation_probability,weather_code&forecast_hours=12&timezone=Asia%2FHong_Kong`;
+            const res = await fetch(url, { cache: "no-store" }).then(r => r.json());
+            if (res && res.hourly && res.hourly.time) {
+                const now = new Date();
+                const currentHourISO = now.toISOString().slice(0, 13);
+                let mappedHours = [];
+                for (let i = 0; i < res.hourly.time.length; i++) {
+                    const timeStr = res.hourly.time[i];
+                    const hourDate = new Date(timeStr);
+                    if (hourDate.getTime() >= now.getTime() - 3600000) {
+                        const temp = Math.round(res.hourly.temperature_2m[i]);
+                        const rain = res.hourly.precipitation_probability[i];
+                        const code = res.hourly.weather_code[i];
+                        
+                        let icon = "☀️";
+                        if ([1, 2].includes(code)) icon = "🌤️";
+                        else if (code === 3) icon = "☁️";
+                        else if ([45, 48].includes(code)) icon = "🌫️";
+                        else if ([51, 53, 55, 56, 57].includes(code)) icon = "🌦️";
+                        else if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) icon = "🌧️";
+                        else if ([95, 96, 99].includes(code)) icon = "⚡";
+                        
+                        let displayTime = hourDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                        if (mappedHours.length === 0) displayTime = "現在 Now";
+                        
+                        mappedHours.push({
+                            time: displayTime,
+                            temp: temp,
+                            rain: rain,
+                            icon: icon
+                        });
+                    }
+                }
+                if (mappedHours.length > 0) {
+                    hourlyData = mappedHours.slice(0, 6);
+                    rebuildQueueAndRender();
+                }
+            }
+        } catch (e) {}
+    }
+
     async function fetchForecast() {
         try {
             const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc').then(r => r.json());
@@ -461,6 +521,131 @@
             } catch(e) {}
         }
         rebuildQueueAndRender();
+    }
+
+    
+    function extractTimeAndTitle(text, pubDate = '') {
+        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
+        const match = text.match(timeRegex);
+        if (match) {
+            let timeStr = match[0].trim();
+            let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+            titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
+            let cleanTime = timeStr;
+            const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
+            if (timeOnlyMatch) {
+                cleanTime = timeOnlyMatch[1];
+            }
+            return { time: cleanTime, title: titleStr };
+        } else if (pubDate) {
+            let cleanTime = '';
+            const timeOnlyMatch = pubDate.match(/\b(\d{1,2}:\d{2})\b/);
+            if (timeOnlyMatch) {
+                cleanTime = timeOnlyMatch[1];
+            }
+            let titleStr = text.replace(/^交通消息[:：\s]*/i, '').trim();
+            return { time: cleanTime, title: titleStr };
+        }
+        return { time: '', title: text };
+    }
+
+    function parseTrafficHtml(htmlText) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        const results = [];
+        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
+
+        const candidates = Array.from(doc.body.querySelectorAll('li, tr, .item, .inner, p, div, article, td'));
+        
+        candidates.forEach(el => {
+            const hasMatchingChild = Array.from(el.children).some(child => {
+                const ct = child.textContent.trim();
+                return ct.length >= 10 && ct.length <= 250 && timeRegex.test(ct);
+            });
+            if (hasMatchingChild) return;
+
+            const text = el.textContent.trim().replace(/\s+/g, ' ');
+            if (text.length < 10 || text.length > 250) return;
+
+            const match = text.match(timeRegex);
+            if (match) {
+                let timeStr = match[0].trim();
+                let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+                titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
+
+                if (titleStr.length > 4 && !results.some(r => r.title.includes(titleStr) || titleStr.includes(r.title))) {
+                    let cleanTime = timeStr;
+                    const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
+                    if (timeOnlyMatch) {
+                        cleanTime = timeOnlyMatch[1];
+                    }
+                    results.push({ time: cleanTime, title: titleStr });
+                }
+            }
+        });
+        return results;
+    }
+
+    async function fetchTrafficNews() {
+        const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
+        const proxyUrls = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+        ];
+
+        // Method 1: Scrape official RTHK Radio Traffic News Website directly via proxy
+        for (const proxyUrl of proxyUrls) {
+            try {
+                const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
+                if (htmlText && htmlText.length > 500) {
+                    const parsedItems = parseTrafficHtml(htmlText);
+                    if (parsedItems.length > 0) {
+                        trafficData = parsedItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Method 2: Fallback to RTHK Traffic RSS Feeds (with timestamp extraction)
+        const trafficFeeds = [
+            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
+            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml'
+        ];
+        
+        for (const feed of trafficFeeds) {
+            try {
+                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
+                if (res && res.items && res.items.length > 0) {
+                    trafficData = res.items.map(item => extractTimeAndTitle(item.title, item.pubDate || '')).filter(t => t && t.title.length > 0);
+                    rebuildQueueAndRender();
+                    return;
+                }
+            } catch(e) {}
+        }
+
+        for (const feed of trafficFeeds) {
+            try {
+                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
+                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(res, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                if (items.length > 0) {
+                    trafficData = items.map(item => {
+                        const titleNode = item.querySelector("title");
+                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                        const titleText = titleNode ? titleNode.textContent.trim() : "";
+                        const dateText = dateNode ? dateNode.textContent.trim() : "";
+                        return extractTimeAndTitle(titleText, dateText);
+                    }).filter(t => t && t.title.length > 0);
+                    rebuildQueueAndRender();
+                    return;
+                }
+            } catch(e) {}
+        }
     }
 
     async function fetchNews() {
@@ -538,7 +723,7 @@
     function acquireDeviceLocation() {
         if (!navigator.geolocation) { rebuildQueueAndRender(); return; }
         navigator.geolocation.getCurrentPosition(
-            async (pos) => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; await fetchAndAggregateRouteFeeds(); }, 
+            async (pos) => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; await fetchAndAggregateRouteFeeds(); await fetchHourlyWeather(); }, 
             () => { rebuildQueueAndRender(); }, { enableHighAccuracy: true, timeout: 10000 }
         );
     }
@@ -605,13 +790,23 @@
             }
         }
 
+        if (hourlyData && hourlyData.length > 0) pagesQueue.push({ type: 'hourly', data: hourlyData });
         if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
         
-        // Always include news page in queue so it never vanishes!
-        const newsPerPage = Math.max(2, Math.min(itemsPerPage, 3));
+        // If there are traffic alerts, add high-visibility traffic alerts page
+        if (trafficData && trafficData.length > 0) {
+            const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
+            for (let i = 0; i < trafficData.length; i += trafficPerPage) {
+                pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
+            }
+        }
+
+        // Cap news at a maximum of 4 pages with exactly 3 headlines each!
+        const newsPerPage = 3;
         if (newsData.length > 0) {
-            for (let i = 0; i < newsData.length; i += newsPerPage) pagesQueue.push({ type: 'news', data: newsData.slice(i, i + newsPerPage) });
+            const cappedNews = newsData.slice(0, 12);
+            for (let i = 0; i < cappedNews.length; i += newsPerPage) pagesQueue.push({ type: 'news', data: cappedNews.slice(i, i + newsPerPage) });
         } else {
             // Placeholder/loading state when news feed is loading or temporarily blocked
             pagesQueue.push({ type: 'news', data: ["載入即時新聞中... Loading RTHK / Gov News...", "正在連接新聞通訊社... Please wait...", "如長時間未能顯示，將於下次自動更新時重試。"] });
@@ -651,6 +846,23 @@
                 </div>
             `;
         } 
+        else if (page.type === 'hourly') {
+            mainHeader.style.opacity = '1';
+            let hourlyHtml = page.data.map(h => `
+                <div class="hourly-card">
+                    <div class="hc-time">${h.time}</div>
+                    <div class="hc-icon">${h.icon}</div>
+                    <div class="hc-temp">${h.temp}°C</div>
+                    <div class="hc-rain">☔ ${h.rain}%</div>
+                </div>
+            `).join('');
+            wrapper.innerHTML = `
+                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
+                    <div style="display: flex; flex-direction: row; gap: 12px; flex-wrap: wrap; align-content: center; justify-content: center; width: 100%;">
+                        ${hourlyHtml}
+                    </div>
+                </div>`;
+        }
         else if (page.type === 'forecast') {
             mainHeader.style.opacity = '1';
             let forecastHtml = page.data.map(f => {
@@ -689,6 +901,26 @@
                     <div class="stock-change ${colorClass}">${sign}${s.change} (${sign}${s.pct}%)</div>
                 </div>
             `;
+        }
+        else if (page.type === 'traffic') {
+            mainHeader.style.opacity = '1';
+            let trafficHtml = page.data.map(t => {
+                const itemTime = typeof t === 'object' && t !== null ? t.time : '';
+                const itemTitle = typeof t === 'object' && t !== null ? t.title : t;
+                
+                const timeBadgeHtml = itemTime ? `<span style="background: rgba(185, 28, 28, 0.6); color: #FEE2E2; font-weight: 700; padding: 4px 12px; border-radius: 8px; font-size: clamp(1.1rem, 2.5vw, 1.6rem); white-space: nowrap; flex-shrink: 0; border: 1px solid rgba(248, 113, 113, 0.4); text-shadow: none;">🕒 ${itemTime}</span>` : '';
+                
+                return `
+                <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); display: flex; align-items: flex-start; gap: 16px;">
+                    ${timeBadgeHtml}
+                    <span style="flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${itemTitle}</span>
+                </div>`;
+            }).join('');
+            wrapper.innerHTML = `
+                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: #FCA5A5; text-align: left; width: 100%; margin-bottom: 4px; padding-left: 10px; text-shadow: var(--text-glow);">特別交通報告 Special Traffic Report</div>
+                    ${trafficHtml}
+                </div>`;
         }
         else if (page.type === 'news') {
             mainHeader.style.opacity = '1';
