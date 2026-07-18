@@ -1,5 +1,5 @@
 // Version: 1.0.40
-const CACHE_NAME = 'inhome-cache-v1.0.40';
+const CACHE_NAME = 'inhome-cache-v1.0.41';
 
 self.addEventListener('install', (e) => {
     self.skipWaiting(); // Force the waiting service worker to become the active service worker.
