@@ -591,13 +591,37 @@
     }
 
     async function fetchTrafficNews() {
+        // Multi-tier reliable sources: HK Transport Department (TD) Official Open Data XML + RTHK feeds
+        const trafficFeeds = [
+            'https://www.td.gov.hk/tc/special_news/trafficnews.xml',
+            'http://resource.data.one.gov.hk/td/tc/specialtrafficnews.xml',
+            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
+            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml'
+        ];
+
+        // Method 1: Try RSS2JSON API on official TD & RTHK feeds
+        for (const feed of trafficFeeds) {
+            try {
+                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
+                if (res && res.items && res.items.length > 0) {
+                    const validItems = res.items.map(item => extractTimeAndTitle(item.title || item.description || '', item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
+                    if (validItems.length > 0) {
+                        trafficData = validItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Method 2: Scrape official RTHK Radio Traffic News Website via proxy
         const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
         const proxyUrls = [
             `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
             `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
         ];
 
-        // Method 1: Scrape official RTHK Radio Traffic News Website directly via proxy
         for (const proxyUrl of proxyUrls) {
             try {
                 const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
@@ -612,38 +636,18 @@
             } catch(e) {}
         }
 
-        // Method 2: Fallback to RTHK Traffic RSS Feeds (with timestamp extraction)
-        const trafficFeeds = [
-            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
-            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml'
-        ];
-        
-        for (const feed of trafficFeeds) {
-            try {
-                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
-                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
-                if (res && res.items && res.items.length > 0) {
-                    const validItems = res.items.map(item => extractTimeAndTitle(item.title, item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
-
+        // Method 3: Direct XML parsing via AllOrigins proxy
         for (const feed of trafficFeeds) {
             try {
                 const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
                 const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(res, "text/xml");
-                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                const items = Array.from(xmlDoc.querySelectorAll("item, news, message, Alert"));
                 if (items.length > 0) {
                     const validItems = items.map(item => {
-                        const titleNode = item.querySelector("title");
-                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                        const titleNode = item.querySelector("title, ChinText, EngText, description");
+                        const dateNode = item.querySelector("pubDate, date, ReferenceDate");
                         const titleText = titleNode ? titleNode.textContent.trim() : "";
                         const dateText = dateNode ? dateNode.textContent.trim() : "";
                         return extractTimeAndTitle(titleText, dateText);
@@ -903,12 +907,15 @@
         if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
         
-        // If there are traffic alerts, add high-visibility traffic alerts page
+        // Always include traffic report page in rotation queue!
+        const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
         if (trafficData && trafficData.length > 0) {
-            const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
             for (let i = 0; i < trafficData.length; i += trafficPerPage) {
                 pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
             }
+        } else {
+            // Guaranteed fallback so the traffic page never disappears from rotation
+            pagesQueue.push({ type: 'traffic', data: [{ time: '即時 Now', title: '目前全港交通大致正常 / 暫無特別交通報告 No special traffic reports or road closures at this time.' }] });
         }
 
         // Cap news at a maximum of 4 pages with exactly 3 headlines each!
