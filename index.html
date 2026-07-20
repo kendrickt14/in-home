@@ -278,7 +278,7 @@
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let autoBusPageCount = 0; 
-    let compiledRouteArray = [], stockData = [], newsData = [], Data = [], forecastData = [], hourlyData = [], pagesQueue = [];
+    let compiledRouteArray = [], stockData = [], newsData = [], trafficData = [], forecastData = [], hourlyData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
 
     function getDynamicItemsPerPage() {
@@ -600,12 +600,12 @@
         };
     }
 
-function parseTrafficHtml(htmlText) {
+    function parseTrafficHtml(htmlText) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
         const results = [];
         
-        // Remove common header/nav/footer containers to avoid capturing UI text
+        // Remove common header/nav/footer containers
         const ignoreSelectors = 'nav, header, footer, .nav, .menu, .header, .footer, script, style, .sidebar, #header, #footer, #sidebar';
         doc.querySelectorAll(ignoreSelectors).forEach(el => el.remove());
         
@@ -614,15 +614,15 @@ function parseTrafficHtml(htmlText) {
         candidates.forEach(el => {
             const text = el.textContent.trim().replace(/\s+/g, ' ');
             
-            // Strict length filtering to ignore labels and buttons
+            // Strict length and content filtering
             if (text.length < 15 || text.length > 300) return;
             
-            // Filter out common UI boilerplate keywords
+            // Filter out common UI boilerplate
             const lowerText = text.toLowerCase();
             const blacklist = ['copyright', '版權所有', '香港電台網站', '繁體', '簡體', 'english', 'home', 'news', 'contact', 'about', 'menu', 'navigation'];
             if (blacklist.some(term => lowerText.includes(term))) return;
             
-            // Ensure the text actually matches a traffic report
+            // Ensure the text actually looks like a report
             const res = extractTimeAndTitle(text);
             if (res && res.title && res.title.length > 8) {
                 // Avoid duplicates by comparing titles
@@ -630,6 +630,9 @@ function parseTrafficHtml(htmlText) {
                     results.push(res);
                 }
             }
+        });
+        return results;
+    }            }
         });
         return results;
     }
