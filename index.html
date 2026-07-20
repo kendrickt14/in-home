@@ -525,114 +525,63 @@
 
     
     function extractTimeAndTitle(text, pubDate = '') {
-        const cleanText = text.replace(/\s+/g, ' ').trim();
-        if (cleanText.length < 8 || cleanText.includes('Copyright') || cleanText.includes('版權所有') || cleanText.includes('香港電台網站')) {
-            return null;
-        }
-
-        const dtRegex = /(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?)\s*(?:HKT\s*)?(\d{1,2}:\d{2}(?:\:\d{2})?)/i;
-        const match = cleanText.match(dtRegex);
-
-        let dateStr = '';
-        let timeStr = '';
-        let titleStr = cleanText;
-        let itemDt = null;
-        const now = new Date();
-
+        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
+        const match = text.match(timeRegex);
         if (match) {
-            const dPart = match[1].replace('年', '-').replace('月', '-').replace('/', '-').replace('日', '');
-            const tPart = match[2].substring(0, 5); // HH:MM
-            const dParts = dPart.split('-').map(p => parseInt(p, 10));
-            const tParts = tPart.split(':').map(p => parseInt(p, 10));
-
-            if (dParts.length === 3 && !isNaN(dParts[0]) && !isNaN(dParts[1]) && !isNaN(dParts[2])) {
-                const y = dParts[0];
-                const m = String(dParts[1]).padStart(2, '0');
-                const d = String(dParts[2]).padStart(2, '0');
-                dateStr = `${y}-${m}-${d}`;
-                timeStr = `${String(tParts[0]).padStart(2, '0')}:${String(tParts[1]).padStart(2, '0')}`;
-                itemDt = new Date(y, dParts[1] - 1, dParts[2], tParts[0], tParts[1], 0);
-            }
-
-            titleStr = cleanText.replace(match[0], '').trim();
-            titleStr = titleStr.replace(/\bHKT\b/gi, '').trim();
-            titleStr = titleStr.replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+            let timeStr = match[0].trim();
+            let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
             titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
-        } else if (pubDate) {
-            const parsedD = new Date(pubDate);
-            if (!isNaN(parsedD.getTime())) {
-                itemDt = parsedD;
-                const y = parsedD.getFullYear();
-                const m = String(parsedD.getMonth() + 1).padStart(2, '0');
-                const d = String(parsedD.getDate()).padStart(2, '0');
-                dateStr = `${y}-${m}-${d}`;
-                timeStr = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            let cleanTime = timeStr;
+            const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
+            if (timeOnlyMatch) {
+                cleanTime = timeOnlyMatch[1];
             }
-            titleStr = cleanText.replace(/^交通消息[:：\s]*/i, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+            return { time: cleanTime, title: titleStr };
+        } else if (pubDate) {
+            let cleanTime = '';
+            const timeOnlyMatch = pubDate.match(/\b(\d{1,2}:\d{2})\b/);
+            if (timeOnlyMatch) {
+                cleanTime = timeOnlyMatch[1];
+            }
+            let titleStr = text.replace(/^交通消息[:：\s]*/i, '').trim();
+            return { time: cleanTime, title: titleStr };
         }
-
-        if (!itemDt) {
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            dateStr = `${y}-${m}-${d}`;
-            timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            itemDt = now;
-        }
-
-        // Filter: News should be within 4 hours (14400000 ms)
-        const diffMs = now.getTime() - itemDt.getTime();
-        const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
-
-        if (diffMs > FOUR_HOURS_MS || diffMs < -3600000) {
-            return null; // Ignore old reports > 4 hours
-        }
-
-        if (titleStr.length <= 4 || /^[\d\s\-/:.,HKT年-月日]+$/i.test(titleStr)) {
-            return null;
-        }
-
-        return {
-            date: dateStr,
-            time: timeStr,
-            title: titleStr,
-            timestamp: itemDt.getTime()
-        };
+        return { time: '', title: text };
     }
 
     function parseTrafficHtml(htmlText) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
         const results = [];
-        
-        // Remove common header/nav/footer containers
-        const ignoreSelectors = 'nav, header, footer, .nav, .menu, .header, .footer, script, style, .sidebar, #header, #footer, #sidebar';
-        doc.querySelectorAll(ignoreSelectors).forEach(el => el.remove());
-        
+        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
+
         const candidates = Array.from(doc.body.querySelectorAll('li, tr, .item, .inner, p, div, article, td'));
         
         candidates.forEach(el => {
+            const hasMatchingChild = Array.from(el.children).some(child => {
+                const ct = child.textContent.trim();
+                return ct.length >= 10 && ct.length <= 250 && timeRegex.test(ct);
+            });
+            if (hasMatchingChild) return;
+
             const text = el.textContent.trim().replace(/\s+/g, ' ');
-            
-            // Strict length and content filtering
-            if (text.length < 15 || text.length > 300) return;
-            
-            // Filter out common UI boilerplate
-            const lowerText = text.toLowerCase();
-            const blacklist = ['copyright', '版權所有', '香港電台網站', '繁體', '簡體', 'english', 'home', 'news', 'contact', 'about', 'menu', 'navigation'];
-            if (blacklist.some(term => lowerText.includes(term))) return;
-            
-            // Ensure the text actually looks like a report
-            const res = extractTimeAndTitle(text);
-            if (res && res.title && res.title.length > 8) {
-                // Avoid duplicates by comparing titles
-                if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) {
-                    results.push(res);
+            if (text.length < 10 || text.length > 250) return;
+
+            const match = text.match(timeRegex);
+            if (match) {
+                let timeStr = match[0].trim();
+                let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
+                titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
+
+                if (titleStr.length > 4 && !results.some(r => r.title.includes(titleStr) || titleStr.includes(r.title))) {
+                    let cleanTime = timeStr;
+                    const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
+                    if (timeOnlyMatch) {
+                        cleanTime = timeOnlyMatch[1];
+                    }
+                    results.push({ time: cleanTime, title: titleStr });
                 }
             }
-        });
-        return results;
-    }            }
         });
         return results;
     }
@@ -641,8 +590,7 @@
         const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
         const proxyUrls = [
             `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-            `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
         ];
 
         // Method 1: Scrape official RTHK Radio Traffic News Website directly via proxy
@@ -660,28 +608,25 @@
             } catch(e) {}
         }
 
-        // Method 2: Fallback to official RTHK Traffic RSS Feeds ONLY
-        const rthkFeeds = [
+        // Method 2: Fallback to RTHK Traffic RSS Feeds (with timestamp extraction)
+        const trafficFeeds = [
             'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
             'https://rthk.hk/rthk/news/rss/c_trafficnews.xml'
         ];
-
-        for (const feed of rthkFeeds) {
+        
+        for (const feed of trafficFeeds) {
             try {
                 const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
                 const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
                 if (res && res.items && res.items.length > 0) {
-                    const validItems = res.items.map(item => extractTimeAndTitle(item.title || item.description || '', item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    trafficData = res.items.map(item => extractTimeAndTitle(item.title, item.pubDate || '')).filter(t => t && t.title.length > 0);
+                    rebuildQueueAndRender();
+                    return;
                 }
             } catch(e) {}
         }
 
-        for (const feed of rthkFeeds) {
+        for (const feed of trafficFeeds) {
             try {
                 const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
                 const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
@@ -689,18 +634,15 @@
                 const xmlDoc = parser.parseFromString(res, "text/xml");
                 const items = Array.from(xmlDoc.querySelectorAll("item"));
                 if (items.length > 0) {
-                    const validItems = items.map(item => {
+                    trafficData = items.map(item => {
                         const titleNode = item.querySelector("title");
                         const dateNode = item.querySelector("pubDate") || item.querySelector("date");
                         const titleText = titleNode ? titleNode.textContent.trim() : "";
                         const dateText = dateNode ? dateNode.textContent.trim() : "";
                         return extractTimeAndTitle(titleText, dateText);
-                    }).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    }).filter(t => t && t.title.length > 0);
+                    rebuildQueueAndRender();
+                    return;
                 }
             } catch(e) {}
         }
@@ -852,21 +794,12 @@
         if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
         
-        // Always include traffic report page in rotation queue!
-        const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
+        // If there are traffic alerts, add high-visibility traffic alerts page
         if (trafficData && trafficData.length > 0) {
+            const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
             for (let i = 0; i < trafficData.length; i += trafficPerPage) {
                 pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
             }
-        } else {
-            // Guaranteed fallback when there are no special traffic reports within 4 hours
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            const dateStr = `${y}-${m}-${d}`;
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            pagesQueue.push({ type: 'traffic', data: [{ date: dateStr, time: timeStr, title: '目前全港交通大致正常 / 過去 4 小時內暫無特別交通報告 No special traffic reports within the last 4 hours.' }] });
         }
 
         // Cap news at a maximum of 4 pages with exactly 3 headlines each!
@@ -972,20 +905,15 @@
         else if (page.type === 'traffic') {
             mainHeader.style.opacity = '1';
             let trafficHtml = page.data.map(t => {
-                const dateStr = typeof t === 'object' && t !== null && t.date ? t.date : '';
-                const timeStr = typeof t === 'object' && t !== null && t.time ? t.time : '';
+                const itemTime = typeof t === 'object' && t !== null ? t.time : '';
                 const itemTitle = typeof t === 'object' && t !== null ? t.title : t;
                 
-                let dtPrefix = '';
-                if (dateStr && timeStr) {
-                    dtPrefix = `<span style="color: #FECACA; font-weight: 700; white-space: nowrap; margin-right: 8px;">${dateStr} &nbsp;${timeStr} &nbsp;|&nbsp;</span>`;
-                } else if (timeStr) {
-                    dtPrefix = `<span style="color: #FECACA; font-weight: 700; white-space: nowrap; margin-right: 8px;">${timeStr} &nbsp;|&nbsp;</span>`;
-                }
+                const timeBadgeHtml = itemTime ? `<span style="background: rgba(185, 28, 28, 0.6); color: #FEE2E2; font-weight: 700; padding: 4px 12px; border-radius: 8px; font-size: clamp(1.1rem, 2.5vw, 1.6rem); white-space: nowrap; flex-shrink: 0; border: 1px solid rgba(248, 113, 113, 0.4); text-shadow: none;">🕒 ${itemTime}</span>` : '';
                 
                 return `
-                <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); font-size: clamp(1.3rem, 3vw, 2rem); padding: 18px 24px; line-height: 1.5; display: block;">
-                    ${dtPrefix}<span>${itemTitle}</span>
+                <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); display: flex; align-items: flex-start; gap: 16px;">
+                    ${timeBadgeHtml}
+                    <span style="flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${itemTitle}</span>
                 </div>`;
             }).join('');
             wrapper.innerHTML = `
