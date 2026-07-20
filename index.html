@@ -278,7 +278,7 @@
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let autoBusPageCount = 0; 
-    let compiledRouteArray = [], stockData = [], newsData = [], trafficData = [], forecastData = [], hourlyData = [], pagesQueue = [];
+    let compiledRouteArray = [], stockData = [], newsData = [], Data = [], forecastData = [], hourlyData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
 
     function getDynamicItemsPerPage() {
@@ -600,20 +600,32 @@
         };
     }
 
-    function parseTrafficHtml(htmlText) {
+function parseTrafficHtml(htmlText) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
         const results = [];
+        
+        // Remove common header/nav/footer containers to avoid capturing UI text
+        const ignoreSelectors = 'nav, header, footer, .nav, .menu, .header, .footer, script, style, .sidebar, #header, #footer, #sidebar';
+        doc.querySelectorAll(ignoreSelectors).forEach(el => el.remove());
         
         const candidates = Array.from(doc.body.querySelectorAll('li, tr, .item, .inner, p, div, article, td'));
         
         candidates.forEach(el => {
             const text = el.textContent.trim().replace(/\s+/g, ' ');
-            if (text.length < 12 || text.length > 350) return;
-            if (text.includes('Copyright') || text.includes('版權所有') || text.includes('香港電台網站')) return;
-
+            
+            // Strict length filtering to ignore labels and buttons
+            if (text.length < 15 || text.length > 300) return;
+            
+            // Filter out common UI boilerplate keywords
+            const lowerText = text.toLowerCase();
+            const blacklist = ['copyright', '版權所有', '香港電台網站', '繁體', '簡體', 'english', 'home', 'news', 'contact', 'about', 'menu', 'navigation'];
+            if (blacklist.some(term => lowerText.includes(term))) return;
+            
+            // Ensure the text actually matches a traffic report
             const res = extractTimeAndTitle(text);
-            if (res && res.title && res.title.length > 5) {
+            if (res && res.title && res.title.length > 8) {
+                // Avoid duplicates by comparing titles
                 if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) {
                     results.push(res);
                 }
