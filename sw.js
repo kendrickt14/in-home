@@ -1,4 +1,4 @@
-// Version: 1.0.44
+// Version: 1.0.45
 const CACHE_NAME = 'inhome-cache-v1.0.43';
 
 self.addEventListener('install', (e) => {
