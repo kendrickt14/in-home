@@ -132,9 +132,9 @@
 
         /* News Page Specifics */
         .news-title-row { 
-            font-size: clamp(1.5rem, 3.5vw, 2.4rem); font-weight: 600; line-height: 1.4; width: 100%; 
+            font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 600; line-height: 1.4; width: 100%; max-width: 1400px;
             background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; 
-            padding: 18px 28px; margin-bottom: 8px; backdrop-filter: blur(14px); 
+            padding: 16px 26px; margin: 0 auto 8px auto; backdrop-filter: blur(14px); 
             text-align: left; text-shadow: var(--text-glow); color: #FFFFFF;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
             overflow: hidden; text-overflow: ellipsis; word-break: break-word;
@@ -278,7 +278,7 @@
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let autoBusPageCount = 0; 
-    let compiledRouteArray = [], stockData = [], newsData = [], trafficData = [], forecastData = [], hourlyData = [], pagesQueue = [];
+    let compiledRouteArray = [], stockData = [], newsData = [], forecastData = [], hourlyData = [], pagesQueue = [];
     const TIME_PER_PAGE_MS = 8000; 
 
     function getDynamicItemsPerPage() {
@@ -301,12 +301,11 @@
         fetchForecast();
         fetchStocks();
         fetchNews();
-        fetchTrafficNews();
         fetchHourlyWeather();
         acquireDeviceLocation(); 
 
         setInterval(() => { 
-            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); fetchTrafficNews(); fetchHourlyWeather();
+            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); fetchHourlyWeather();
         }, 60000); 
 
         setInterval(async () => {
@@ -523,131 +522,6 @@
         rebuildQueueAndRender();
     }
 
-    
-    function extractTimeAndTitle(text, pubDate = '') {
-        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
-        const match = text.match(timeRegex);
-        if (match) {
-            let timeStr = match[0].trim();
-            let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
-            titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
-            let cleanTime = timeStr;
-            const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
-            if (timeOnlyMatch) {
-                cleanTime = timeOnlyMatch[1];
-            }
-            return { time: cleanTime, title: titleStr };
-        } else if (pubDate) {
-            let cleanTime = '';
-            const timeOnlyMatch = pubDate.match(/\b(\d{1,2}:\d{2})\b/);
-            if (timeOnlyMatch) {
-                cleanTime = timeOnlyMatch[1];
-            }
-            let titleStr = text.replace(/^交通消息[:：\s]*/i, '').trim();
-            return { time: cleanTime, title: titleStr };
-        }
-        return { time: '', title: text };
-    }
-
-    function parseTrafficHtml(htmlText) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, "text/html");
-        const results = [];
-        const timeRegex = /(\b\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[-/月]\d{2,4}\s*\d{1,2}:\d{2}\b|\b\d{1,2}[-/月]\d{1,2}[日]?\s*\d{1,2}:\d{2}\b|\b\d{1,2}:\d{2}\b)/;
-
-        const candidates = Array.from(doc.body.querySelectorAll('li, tr, .item, .inner, p, div, article, td'));
-        
-        candidates.forEach(el => {
-            const hasMatchingChild = Array.from(el.children).some(child => {
-                const ct = child.textContent.trim();
-                return ct.length >= 10 && ct.length <= 250 && timeRegex.test(ct);
-            });
-            if (hasMatchingChild) return;
-
-            const text = el.textContent.trim().replace(/\s+/g, ' ');
-            if (text.length < 10 || text.length > 250) return;
-
-            const match = text.match(timeRegex);
-            if (match) {
-                let timeStr = match[0].trim();
-                let titleStr = text.replace(timeStr, '').replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
-                titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
-
-                if (titleStr.length > 4 && !results.some(r => r.title.includes(titleStr) || titleStr.includes(r.title))) {
-                    let cleanTime = timeStr;
-                    const timeOnlyMatch = timeStr.match(/\b(\d{1,2}:\d{2})\b/);
-                    if (timeOnlyMatch) {
-                        cleanTime = timeOnlyMatch[1];
-                    }
-                    results.push({ time: cleanTime, title: titleStr });
-                }
-            }
-        });
-        return results;
-    }
-
-    async function fetchTrafficNews() {
-        const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
-        const proxyUrls = [
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
-        ];
-
-        // Method 1: Scrape official RTHK Radio Traffic News Website directly via proxy
-        for (const proxyUrl of proxyUrls) {
-            try {
-                const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
-                if (htmlText && htmlText.length > 500) {
-                    const parsedItems = parseTrafficHtml(htmlText);
-                    if (parsedItems.length > 0) {
-                        trafficData = parsedItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // Method 2: Fallback to RTHK Traffic RSS Feeds (with timestamp extraction)
-        const trafficFeeds = [
-            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
-            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml'
-        ];
-        
-        for (const feed of trafficFeeds) {
-            try {
-                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
-                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
-                if (res && res.items && res.items.length > 0) {
-                    trafficData = res.items.map(item => extractTimeAndTitle(item.title, item.pubDate || '')).filter(t => t && t.title.length > 0);
-                    rebuildQueueAndRender();
-                    return;
-                }
-            } catch(e) {}
-        }
-
-        for (const feed of trafficFeeds) {
-            try {
-                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
-                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(res, "text/xml");
-                const items = Array.from(xmlDoc.querySelectorAll("item"));
-                if (items.length > 0) {
-                    trafficData = items.map(item => {
-                        const titleNode = item.querySelector("title");
-                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
-                        const titleText = titleNode ? titleNode.textContent.trim() : "";
-                        const dateText = dateNode ? dateNode.textContent.trim() : "";
-                        return extractTimeAndTitle(titleText, dateText);
-                    }).filter(t => t && t.title.length > 0);
-                    rebuildQueueAndRender();
-                    return;
-                }
-            } catch(e) {}
-        }
-    }
-
     async function fetchNews() {
         // Multi-tier reliable feed URLs (Official RTHK + HK Gov feeds)
         const feedUrls = [
@@ -657,67 +531,73 @@
             'https://www.news.gov.hk/tc/common/html/ticker.rss.xml'
         ];
 
+        function formatItem(title, pubDate) {
+            if (!title || title.includes('【重溫】')) return null;
+            let timeStr = '';
+            if (pubDate) {
+                const parsedD = new Date(pubDate);
+                if (!isNaN(parsedD.getTime())) {
+                    const y = parsedD.getFullYear();
+                    const m = String(parsedD.getMonth() + 1).padStart(2, '0');
+                    const d = String(parsedD.getDate()).padStart(2, '0');
+                    const time = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    timeStr = `${y}-${m}-${d}  ${time}`;
+                }
+            }
+            if (!timeStr) {
+                const now = new Date();
+                timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
+            return { title: title.trim(), time: timeStr };
+        }
+
         // Method 1: Try RSS2JSON API first
         for (const feedUrl of feedUrls) {
             try {
                 const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
                 const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
                 if (res && res.items && res.items.length > 0) {
-                    const titles = res.items.map(item => item.title).filter(t => t && t.trim().length > 0);
-                    if (titles.length > 0) {
-                        newsData = titles.slice(0, 15);
+                    const mappedItems = res.items.map(item => formatItem(item.title, item.pubDate)).filter(i => i !== null);
+                    if (mappedItems.length > 0) {
+                        newsData = mappedItems.slice(0, 15);
                         rebuildQueueAndRender();
                         return;
                     }
                 }
             } catch(e) {}
         }
+
+        const parseXmlFeed = async (proxyUrlTemplate) => {
+            for (const feedUrl of feedUrls) {
+                try {
+                    const xmlUrl = proxyUrlTemplate.replace("URL_PLACEHOLDER", encodeURIComponent(feedUrl));
+                    const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(res, "text/xml");
+                    const items = Array.from(xmlDoc.querySelectorAll("item"));
+                    if (items.length > 0) {
+                        const mappedItems = items.map(item => {
+                            const titleNode = item.querySelector("title");
+                            const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                            return formatItem(titleNode ? titleNode.textContent : "", dateNode ? dateNode.textContent : "");
+                        }).filter(i => i !== null);
+
+                        if (mappedItems.length > 0) {
+                            newsData = mappedItems.slice(0, 15);
+                            rebuildQueueAndRender();
+                            return true;
+                        }
+                    }
+                } catch(e) {}
+            }
+            return false;
+        };
 
         // Method 2: Fallback to AllOrigins XML Proxy
-        for (const feedUrl of feedUrls) {
-            try {
-                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
-                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(res, "text/xml");
-                const items = Array.from(xmlDoc.querySelectorAll("item"));
-                if (items.length > 0) {
-                    const titles = items.map(item => {
-                        const titleNode = item.querySelector("title");
-                        return titleNode ? titleNode.textContent.trim() : "";
-                    }).filter(t => t.length > 0);
-
-                    if (titles.length > 0) {
-                        newsData = titles.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
+        if (await parseXmlFeed(`https://api.allorigins.win/raw?url=URL_PLACEHOLDER`)) return;
 
         // Method 3: Fallback to CodeTabs CORS proxy
-        for (const feedUrl of feedUrls) {
-            try {
-                const xmlUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feedUrl)}`;
-                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(res, "text/xml");
-                const items = Array.from(xmlDoc.querySelectorAll("item"));
-                if (items.length > 0) {
-                    const titles = items.map(item => {
-                        const titleNode = item.querySelector("title");
-                        return titleNode ? titleNode.textContent.trim() : "";
-                    }).filter(t => t.length > 0);
-
-                    if (titles.length > 0) {
-                        newsData = titles.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
+        await parseXmlFeed(`https://api.codetabs.com/v1/proxy?quest=URL_PLACEHOLDER`);
     }
 
     function acquireDeviceLocation() {
@@ -766,7 +646,11 @@
             await Promise.all(fetchPromises);
             compiledRouteArray = Object.values(aggregatedRoutes).map(line => { 
                 line.arrivals.sort((a, b) => new Date(a.eta) - new Date(b.eta)); return line; 
-            }).sort((a, b) => a.stopDistance - b.stopDistance);
+            }).sort((a, b) => {
+                const timeA = a.arrivals[0] ? new Date(a.arrivals[0].eta).getTime() : 8640000000000;
+                const timeB = b.arrivals[0] ? new Date(b.arrivals[0].eta).getTime() : 8640000000000;
+                return timeA - timeB;
+            });
             rebuildQueueAndRender();
         } catch (e) {}
     }
@@ -793,16 +677,8 @@
         if (hourlyData && hourlyData.length > 0) pagesQueue.push({ type: 'hourly', data: hourlyData });
         if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
-        
-        // If there are traffic alerts, add high-visibility traffic alerts page
-        if (trafficData && trafficData.length > 0) {
-            const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
-            for (let i = 0; i < trafficData.length; i += trafficPerPage) {
-                pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
-            }
-        }
 
-        // Cap news at a maximum of 4 pages with exactly 3 headlines each!
+        // Cap news at a maximum of 4 pages with exactly 3 headlines each
         const newsPerPage = 3;
         if (newsData.length > 0) {
             const cappedNews = newsData.slice(0, 12);
@@ -902,31 +778,21 @@
                 </div>
             `;
         }
-        else if (page.type === 'traffic') {
-            mainHeader.style.opacity = '1';
-            let trafficHtml = page.data.map(t => {
-                const itemTime = typeof t === 'object' && t !== null ? t.time : '';
-                const itemTitle = typeof t === 'object' && t !== null ? t.title : t;
-                
-                const timeBadgeHtml = itemTime ? `<span style="background: rgba(185, 28, 28, 0.6); color: #FEE2E2; font-weight: 700; padding: 4px 12px; border-radius: 8px; font-size: clamp(1.1rem, 2.5vw, 1.6rem); white-space: nowrap; flex-shrink: 0; border: 1px solid rgba(248, 113, 113, 0.4); text-shadow: none;">🕒 ${itemTime}</span>` : '';
-                
-                return `
-                <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); display: flex; align-items: flex-start; gap: 16px;">
-                    ${timeBadgeHtml}
-                    <span style="flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${itemTitle}</span>
-                </div>`;
-            }).join('');
-            wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
-                    <div style="font-size: 1.5rem; font-weight: 600; color: #FCA5A5; text-align: left; width: 100%; margin-bottom: 4px; padding-left: 10px; text-shadow: var(--text-glow);">特別交通報告 Special Traffic Report</div>
-                    ${trafficHtml}
-                </div>`;
-        }
         else if (page.type === 'news') {
             mainHeader.style.opacity = '1';
-            let titlesHtml = page.data.map(t => `<div class="news-title-row">${t}</div>`).join('');
+            let titlesHtml = page.data.map(t => {
+                const titleStr = typeof t === 'object' && t !== null ? t.title : t;
+                const timeStr = typeof t === 'object' && t !== null && t.time ? t.time : '';
+                
+                let dtPrefix = '';
+                if (timeStr && titleStr !== "載入即時新聞中... Loading RTHK / Gov News..." && !titleStr.includes("正在連接新聞通訊社")) {
+                    dtPrefix = `<span style="color: #93C5FD; font-weight: 700; white-space: nowrap; margin-right: 8px;">${timeStr} &nbsp;|&nbsp;</span>`;
+                }
+                return `<div class="news-title-row">${dtPrefix}<span>${titleStr}</span></div>`;
+            }).join('');
+            
             wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
+                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
                     ${titlesHtml}
                 </div>`;
         }
@@ -1078,7 +944,12 @@
             "./default-bg-2.jpg",
             "./default-bg-3.jpg",
             "./default-bg-4.jpg",
-            "./default-bg-5.jpg"
+            "./default-bg-5.jpg",
+            "./default-bg-6.jpg",
+            "./default-bg-7.jpg",
+            "./default-bg-8.jpg",
+            "./default-bg-9.jpg",
+            "./default-bg-10.jpg"
         ];
         
         sources.forEach((s, i) => { 
