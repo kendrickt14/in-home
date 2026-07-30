@@ -278,7 +278,7 @@
     let userLat = null, userLng = null;
     let currentPageIndex = 0; 
     let autoBusPageCount = 0; 
-    let compiledRouteArray = [], stockData = [], newsData = [], trafficData = [], forecastData = [], hourlyData = [], pagesQueue = [];
+    let compiledRouteArray = [], stockData = [], newsData = [], trafficData = [], forecastData = [], hourlyData = [], pagesQueue = [], localWeatherText = '';
     const TIME_PER_PAGE_MS = 8000; 
 
     function getDynamicItemsPerPage() {
@@ -303,10 +303,11 @@
         fetchNews();
         fetchTrafficNews();
         fetchHourlyWeather();
+        fetchLocalWeatherText();
         acquireDeviceLocation(); 
 
         setInterval(() => { 
-            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); fetchTrafficNews(); fetchHourlyWeather();
+            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); fetchTrafficNews(); fetchHourlyWeather(); fetchLocalWeatherText();
         }, 60000); 
 
         setInterval(async () => {
@@ -416,6 +417,47 @@
     }
 
     
+    
+    async function fetchLocalWeatherText() {
+        const feedUrl = 'https://rss.weather.gov.hk/rss/LocalWeatherForecast_uc.xml';
+        
+        try {
+            const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
+            const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
+            if (res && res.items && res.items.length > 0) {
+                let desc = res.items[0].description || '';
+                desc = desc.replace(/<img[^>]*>/g, '');
+                desc = desc.replace(/<a[^>]*>.*<\/a>/g, '');
+                if (desc.length > 10) {
+                    localWeatherText = desc;
+                    rebuildQueueAndRender();
+                    return;
+                }
+            }
+        } catch(e) {}
+
+        try {
+            const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
+            const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(res, "text/xml");
+            const item = xmlDoc.querySelector("item");
+            if (item) {
+                const descNode = item.querySelector("description");
+                if (descNode) {
+                    let desc = descNode.textContent || '';
+                    desc = desc.replace(/<img[^>]*>/g, '');
+                    desc = desc.replace(/<a[^>]*>.*<\/a>/g, '');
+                    if (desc.length > 10) {
+                        localWeatherText = desc;
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+
     async function fetchHourlyWeather() {
         try {
             const lat = userLat || 22.3193;
@@ -542,9 +584,8 @@
             return null;
         }
         
-        // Exclude exact matches of navigation buttons
-        const exactBlacklist = ['電視', '電台', '熱門', '首頁'];
-        if (exactBlacklist.includes(cleanText)) {
+        // Aggressively exclude navigation buttons and artifacts
+        if (cleanText.includes('電視') || cleanText.includes('電台') || cleanText.includes('熱門') || cleanText.includes('首頁')) {
             return null;
         }
 
@@ -696,6 +737,116 @@
         }
 
         // Method 2: Fallback to official RTHK Traffic RSS Feeds (No TD source)
+        const rthkFeeds = [
+            'https://rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
+            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
+            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml',
+            'https://www.rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
+            'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml'
+        ];
+
+        for (const feed of rthkFeeds) {
+            try {
+                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
+                if (res && res.items && res.items.length > 0) {
+                    const validItems = res.items.map(item => extractTimeAndTitle(item.title || item.description || '', item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
+                    if (validItems.length > 0) {
+                        trafficData = validItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        for (const feed of rthkFeeds) {
+            try {
+                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
+                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(res, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                if (items.length > 0) {
+                    const validItems = items.map(item => {
+                        const titleNode = item.querySelector("title");
+                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                        const titleText = titleNode ? titleNode.textContent.trim() : "";
+                        const dateText = dateNode ? dateNode.textContent.trim() : "";
+                        return extractTimeAndTitle(titleText, dateText);
+                    }).filter(t => t && t.title && t.title.length > 5);
+                    if (validItems.length > 0) {
+                        trafficData = validItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+    }
+
+    
+    function parseTrafficHtml(htmlText) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        const results = [];
+        
+        doc.querySelectorAll('script, style, nav, header, footer').forEach(el => el.remove());
+        const candidates = Array.from(doc.body.querySelectorAll('li, tr, article, p, div, td, span, a, h3, h4, .item, .inner, .list-item, .traffic-item'));
+        
+        candidates.forEach(el => {
+            const text = el.textContent.trim().replace(/\s+/g, ' ');
+            if (text.length < 6 || text.length > 2000) return;
+            const lowerText = text.toLowerCase();
+            const blacklist = ['copyright', '版權所有', '香港電台網站', '繁體', '簡體', 'english', 'home', 'contact', 'about', 'navigation'];
+            if (blacklist.some(term => lowerText.includes(term))) return;
+            
+            const res = extractTimeAndTitle(text);
+            if (res && res.title && res.title.length > 5) {
+                if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) {
+                    results.push(res);
+                }
+            }
+        });
+        return results;
+    }
+
+    async function fetchTrafficNews() {
+        const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
+        try {
+            const getUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+            const resJson = await fetch(getUrl, { cache: "no-store" }).then(r => r.json());
+            if (resJson && resJson.contents && resJson.contents.length > 500) {
+                const parsedItems = parseTrafficHtml(resJson.contents);
+                if (parsedItems.length > 0) {
+                    trafficData = parsedItems.slice(0, 15);
+                    rebuildQueueAndRender();
+                    return;
+                }
+            }
+        } catch(e) {}
+
+        const proxyUrls = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+            `https://thingproxy.freeboard.io/fetch/${targetUrl}`,
+            `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`
+        ];
+
+        for (const proxyUrl of proxyUrls) {
+            try {
+                const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
+                if (htmlText && htmlText.length > 500) {
+                    const parsedItems = parseTrafficHtml(htmlText);
+                    if (parsedItems.length > 0) {
+                        trafficData = parsedItems.slice(0, 15);
+                        rebuildQueueAndRender();
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
         const rthkFeeds = [
             'https://rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
             'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
@@ -900,7 +1051,26 @@
 
         if (hourlyData && hourlyData.length > 0) pagesQueue.push({ type: 'hourly', data: hourlyData });
         if (forecastData && forecastData.length > 0) pagesQueue.push({ type: 'forecast', data: forecastData.slice(0, 5) });
+        if (localWeatherText) pagesQueue.push({ type: 'weatherText', data: localWeatherText });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
+        
+        // Always include traffic report page in rotation queue!
+        const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
+        if (trafficData && trafficData.length > 0) {
+            for (let i = 0; i < trafficData.length; i += trafficPerPage) {
+                pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
+            }
+        } else {
+            // Guaranteed fallback when there are no special traffic reports within 4 hours
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${y}-${m}-${d}`;
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            pagesQueue.push({ type: 'traffic', data: [{ date: dateStr, time: timeStr, title: '目前全港交通大致正常 / 暫無特別交通消息 No special traffic reports at this time.' }] });
+        }
+
         
         // Always include traffic report page in rotation queue!
         const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
@@ -980,6 +1150,16 @@
                     </div>
                 </div>`;
         }
+        else if (page.type === 'weatherText') {
+            mainHeader.style.opacity = '1';
+            wrapper.innerHTML = `
+                <div class="center-layout" style="justify-content: center; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
+                    <div style="background: var(--glass-card); border: 1px solid var(--glass-border); border-radius: 16px; padding: 24px 30px; text-align: left; font-size: clamp(1.1rem, 2.3vw, 1.6rem); line-height: 1.8; color: #FFFFFF; width: 100%; backdrop-filter: blur(14px); text-shadow: var(--text-glow); overflow-y: auto; max-height: calc(100vh - 200px);">
+                        <div style="color: #93C5FD; font-weight: 700; margin-bottom: 16px; font-size: clamp(1.4rem, 3vw, 2.1rem); border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 12px;">本港地區天氣預報 / Local Forecast</div>
+                        <div style="word-break: break-word;">${page.data}</div>
+                    </div>
+                </div>`;
+        }
         else if (page.type === 'forecast') {
             mainHeader.style.opacity = '1';
             let forecastHtml = page.data.map(f => {
@@ -1041,6 +1221,30 @@
             wrapper.innerHTML = `
                 <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
                     
+                    ${trafficHtml}
+                </div>`;
+        }
+        else if (page.type === 'traffic') {
+            mainHeader.style.opacity = '1';
+            let trafficHtml = page.data.map(t => {
+                const dateStr = typeof t === 'object' && t !== null && t.date ? t.date : '';
+                const timeStr = typeof t === 'object' && t !== null && t.time ? t.time : '';
+                const itemTitle = typeof t === 'object' && t !== null ? t.title : t;
+                
+                let dtPrefix = '';
+                let fullTime = [dateStr, timeStr].filter(Boolean).join('  ');
+                
+                if (fullTime) {
+                    dtPrefix = `<div style="color: #FECACA; font-size: clamp(0.9rem, 2.5vw, 1.4rem); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.03em;">${fullTime}</div>`;
+                }
+                
+                return `
+                <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); display: flex; flex-direction: column; align-items: flex-start; padding: 16px 26px;">
+                    ${dtPrefix}<div style="width: 100%; font-size: clamp(1.3rem, 3vw, 2rem); line-height: 1.5;">${itemTitle}</div>
+                </div>`;
+            }).join('');
+            wrapper.innerHTML = `
+                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
                     ${trafficHtml}
                 </div>`;
         }
