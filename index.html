@@ -256,6 +256,7 @@
     </div>
 
 <script>
+
     let deferredPrompt;
     const installBtn = document.getElementById('installBtn');
     window.addEventListener('beforeinstallprompt', (e) => { 
@@ -296,7 +297,7 @@
         await renderSettingsPhotoList();
         await loadAndRenderBackgroundSlideshow();
         
-        // Launch all network fetchers in parallel without blocking!
+        // Launch all network fetchers in parallel without blocking
         fetchHKOWeather(); 
         fetchForecast();
         fetchStocks();
@@ -335,7 +336,7 @@
             
             const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
             const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEn[now.getDay()]})`;
-            const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
+            const fullDateString = `${tcDate}    ${enDate}`;
 
             document.getElementById('liveTime').textContent = timeString;
             document.getElementById('liveDate').textContent = fullDateString;
@@ -416,26 +417,17 @@
         } catch (e) {} rebuildQueueAndRender(); 
     }
 
-    
-    
     async function fetchLocalWeatherText() {
         const feedUrl = 'https://rss.weather.gov.hk/rss/LocalWeatherForecast_uc.xml';
-        
         try {
             const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
             const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
             if (res && res.items && res.items.length > 0) {
                 let desc = res.items[0].description || '';
-                desc = desc.replace(/<img[^>]*>/g, '');
-                desc = desc.replace(/<a[^>]*>.*<\/a>/g, '');
-                if (desc.length > 10) {
-                    localWeatherText = desc;
-                    rebuildQueueAndRender();
-                    return;
-                }
+                desc = desc.replace(/<img[^>]*>/g, '').replace(/<a[^>]*>.*<\/a>/g, '');
+                if (desc.length > 10) { localWeatherText = desc; rebuildQueueAndRender(); return; }
             }
         } catch(e) {}
-
         try {
             const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
             const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
@@ -446,13 +438,8 @@
                 const descNode = item.querySelector("description");
                 if (descNode) {
                     let desc = descNode.textContent || '';
-                    desc = desc.replace(/<img[^>]*>/g, '');
-                    desc = desc.replace(/<a[^>]*>.*<\/a>/g, '');
-                    if (desc.length > 10) {
-                        localWeatherText = desc;
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    desc = desc.replace(/<img[^>]*>/g, '').replace(/<a[^>]*>.*<\/a>/g, '');
+                    if (desc.length > 10) { localWeatherText = desc; rebuildQueueAndRender(); return; }
                 }
             }
         } catch(e) {}
@@ -460,22 +447,18 @@
 
     async function fetchHourlyWeather() {
         try {
-            const lat = userLat || 22.3193;
-            const lng = userLng || 114.1694;
+            const lat = userLat || 22.3193; const lng = userLng || 114.1694;
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,precipitation_probability,weather_code&forecast_hours=12&timezone=Asia%2FHong_Kong`;
             const res = await fetch(url, { cache: "no-store" }).then(r => r.json());
             if (res && res.hourly && res.hourly.time) {
                 const now = new Date();
-                const currentHourISO = now.toISOString().slice(0, 13);
                 let mappedHours = [];
                 for (let i = 0; i < res.hourly.time.length; i++) {
-                    const timeStr = res.hourly.time[i];
-                    const hourDate = new Date(timeStr);
+                    const timeStr = res.hourly.time[i]; const hourDate = new Date(timeStr);
                     if (hourDate.getTime() >= now.getTime() - 3600000) {
                         const temp = Math.round(res.hourly.temperature_2m[i]);
                         const rain = res.hourly.precipitation_probability[i];
                         const code = res.hourly.weather_code[i];
-                        
                         let icon = "☀️";
                         if ([1, 2].includes(code)) icon = "🌤️";
                         else if (code === 3) icon = "☁️";
@@ -483,22 +466,12 @@
                         else if ([51, 53, 55, 56, 57].includes(code)) icon = "🌦️";
                         else if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) icon = "🌧️";
                         else if ([95, 96, 99].includes(code)) icon = "⚡";
-                        
                         let displayTime = hourDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                         if (mappedHours.length === 0) displayTime = "現在 Now";
-                        
-                        mappedHours.push({
-                            time: displayTime,
-                            temp: temp,
-                            rain: rain,
-                            icon: icon
-                        });
+                        mappedHours.push({ time: displayTime, temp: temp, rain: rain, icon: icon });
                     }
                 }
-                if (mappedHours.length > 0) {
-                    hourlyData = mappedHours.slice(0, 6);
-                    rebuildQueueAndRender();
-                }
+                if (mappedHours.length > 0) { hourlyData = mappedHours.slice(0, 6); rebuildQueueAndRender(); }
             }
         } catch (e) {}
     }
@@ -506,10 +479,7 @@
     async function fetchForecast() {
         try {
             const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc').then(r => r.json());
-            if (res && res.weatherForecast) {
-                forecastData = res.weatherForecast;
-                rebuildQueueAndRender();
-            }
+            if (res && res.weatherForecast) { forecastData = res.weatherForecast; rebuildQueueAndRender(); }
         } catch(e) {}
     }
 
@@ -565,84 +535,34 @@
         rebuildQueueAndRender();
     }
 
-    
     function extractTimeAndTitle(text, pubDate = '') {
         const cleanText = text.replace(/\s+/g, ' ').trim();
-        if (cleanText.length < 6 || cleanText.includes('Copyright') || cleanText.includes('版權所有') || cleanText.includes('香港電台網站') || cleanText.includes('【重溫】')) {
-            return null;
-        }
-        
-        // Exclude RTHK UI artifacts, search, archive date selectors, etc.
+        if (cleanText.length < 6 || cleanText.includes('Copyright') || cleanText.includes('版權所有') || cleanText.includes('香港電台網站') || cleanText.includes('【重溫】')) return null;
         const lowerC = cleanText.toLowerCase();
-        if (lowerC.includes('搜尋 search') || lowerC.includes('過去12個月') || lowerC.includes('請選擇日期')) {
-            return null;
-        }
-        
-        // Exclude date picker rows which are just long lists of numbers 
-        // e.g., "01 02 03 04 05 06 07 08 09 10 11 12"
-        if (cleanText.includes('01 02 03 04 05') || cleanText.includes('13 14 15 16 17')) {
-            return null;
-        }
-        
-        // Aggressively exclude navigation buttons and artifacts
-        if (cleanText.includes('電視') || cleanText.includes('電台') || cleanText.includes('熱門') || cleanText.includes('首頁')) {
-            return null;
-        }
+        if (lowerC.includes('搜尋 search') || lowerC.includes('過去12個月') || lowerC.includes('請選擇日期')) return null;
+        if (cleanText.includes('01 02 03 04 05') || cleanText.includes('13 14 15 16 17')) return null;
+        if (cleanText.includes('電視') || cleanText.includes('電台') || cleanText.includes('熱門') || cleanText.includes('首頁')) return null;
 
-        // Match time HH:MM (with optional :SS or HKT)
-        const timeRegex = /(\d{1,2}:\d{2}(?:\:\d{2})?)/;
-        const timeMatch = cleanText.match(timeRegex);
+        const timeMatch = cleanText.match(/(\d{1,2}:\d{2}(?:\:\d{2})?)/);
+        const dateMatch = cleanText.match(/(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?|\d{1,2}[-/]\d{1,2}[-/]\d{4}|\d{1,2}月\d{1,2}日)/i);
 
-        // Match date YYYY-MM-DD or DD-MM-YYYY or YYYY年MM月DD日 or MM月DD日
-        const dateRegex = /(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?|\d{1,2}[-/]\d{1,2}[-/]\d{4}|\d{1,2}月\d{1,2}日)/i;
-        const dateMatch = cleanText.match(dateRegex);
-
-        let dateStr = '';
-        let timeStr = '';
-        let titleStr = cleanText;
-        const now = new Date();
-
-        if (timeMatch) {
-            timeStr = timeMatch[1].substring(0, 5); // HH:MM
-        } else if (pubDate) {
-            const parsedD = new Date(pubDate);
-            if (!isNaN(parsedD.getTime())) {
-                timeStr = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            }
-        }
-
-        if (!timeStr) {
-            timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        }
+        let dateStr = ''; let timeStr = ''; let titleStr = cleanText; const now = new Date();
+        if (timeMatch) timeStr = timeMatch[1].substring(0, 5); 
+        else if (pubDate) { const parsedD = new Date(pubDate); if (!isNaN(parsedD.getTime())) timeStr = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
+        if (!timeStr) timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
         if (dateMatch) {
             let dRaw = dateMatch[1].replace('年', '-').replace('月', '-').replace('/', '-').replace('日', '');
             let dParts = dRaw.split('-').map(p => parseInt(p, 10));
             if (dParts.length === 3 && !isNaN(dParts[0]) && !isNaN(dParts[1]) && !isNaN(dParts[2])) {
-                if (dParts[0] > 1000) {
-                    dateStr = `${dParts[0]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[2]).padStart(2, '0')}`;
-                } else if (dParts[2] > 1000) {
-                    dateStr = `${dParts[2]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[0]).padStart(2, '0')}`;
-                }
-            } else if (dParts.length === 2 && !isNaN(dParts[0]) && !isNaN(dParts[1])) {
-                dateStr = `${now.getFullYear()}-${String(dParts[0]).padStart(2, '0')}-${String(dParts[1]).padStart(2, '0')}`;
-            }
+                if (dParts[0] > 1000) dateStr = `${dParts[0]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[2]).padStart(2, '0')}`;
+                else if (dParts[2] > 1000) dateStr = `${dParts[2]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[0]).padStart(2, '0')}`;
+            } else if (dParts.length === 2 && !isNaN(dParts[0]) && !isNaN(dParts[1])) dateStr = `${now.getFullYear()}-${String(dParts[0]).padStart(2, '0')}-${String(dParts[1]).padStart(2, '0')}`;
         } else if (pubDate) {
             const parsedD = new Date(pubDate);
-            if (!isNaN(parsedD.getTime())) {
-                const y = parsedD.getFullYear();
-                const m = String(parsedD.getMonth() + 1).padStart(2, '0');
-                const d = String(parsedD.getDate()).padStart(2, '0');
-                dateStr = `${y}-${m}-${d}`;
-            }
+            if (!isNaN(parsedD.getTime())) { const y = parsedD.getFullYear(); const m = String(parsedD.getMonth() + 1).padStart(2, '0'); const d = String(parsedD.getDate()).padStart(2, '0'); dateStr = `${y}-${m}-${d}`; }
         }
-
-        if (!dateStr) {
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            dateStr = `${y}-${m}-${d}`;
-        }
+        if (!dateStr) { const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0'); const d = String(now.getDate()).padStart(2, '0'); dateStr = `${y}-${m}-${d}`; }
 
         if (dateMatch) titleStr = titleStr.replace(dateMatch[0], '');
         if (timeMatch) titleStr = titleStr.replace(timeMatch[0], '');
@@ -652,145 +572,12 @@
         titleStr = titleStr.replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
         titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
 
-        if (titleStr.length <= 4 || /^[\d\s\-/:.,HKT年-月日()（）\[\]]+$/i.test(titleStr)) {
-            return null;
-        }
-
-        return {
-            date: dateStr,
-            time: timeStr,
-            title: titleStr,
-            timestamp: now.getTime()
-        };
+        if (titleStr.length <= 4 || /^[\d\s\-/:.,HKT年-月日()（）\[\]]+$/i.test(titleStr)) return null;
+        return { date: dateStr, time: timeStr, title: titleStr, timestamp: now.getTime() };
     }
 
     function parseTrafficHtml(htmlText) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, "text/html");
-        const results = [];
-        
-        // Remove only safe non-content tags (script, style, nav, header, footer)
-        doc.querySelectorAll('script, style, nav, header, footer').forEach(el => el.remove());
-        
-        // Inspect all text-bearing elements
-        const candidates = Array.from(doc.body.querySelectorAll('li, tr, article, p, div, td, span, a, h3, h4, .item, .inner, .list-item, .traffic-item'));
-        
-        candidates.forEach(el => {
-            const text = el.textContent.trim().replace(/\s+/g, ' ');
-            
-            // Allow 6 to 2000 chars for traffic announcements
-            if (text.length < 6 || text.length > 2000) return;
-            
-            // Filter out common UI boilerplate keywords
-            const lowerText = text.toLowerCase();
-            const blacklist = ['copyright', '版權所有', '香港電台網站', '繁體', '簡體', 'english', 'home', 'contact', 'about', 'navigation'];
-            if (blacklist.some(term => lowerText.includes(term))) return;
-            
-            const res = extractTimeAndTitle(text);
-            if (res && res.title && res.title.length > 5) {
-                // Avoid duplicates by checking if similar title already exists
-                if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) {
-                    results.push(res);
-                }
-            }
-        });
-        return results;
-    }
-
-    async function fetchTrafficNews() {
-        const targetUrl = 'https://programme.rthk.hk/channel/radio/trafficnews/index.php';
-        
-        // Method 1a: Try AllOrigins JSON API (/get) first - bypasses encoding & raw fetch issues
-        try {
-            const getUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-            const resJson = await fetch(getUrl, { cache: "no-store" }).then(r => r.json());
-            if (resJson && resJson.contents && resJson.contents.length > 500) {
-                const parsedItems = parseTrafficHtml(resJson.contents);
-                if (parsedItems.length > 0) {
-                    trafficData = parsedItems.slice(0, 15);
-                    rebuildQueueAndRender();
-                    return;
-                }
-            }
-        } catch(e) {}
-
-        // Method 1b: Try raw proxy scraping
-        const proxyUrls = [
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-            `https://thingproxy.freeboard.io/fetch/${targetUrl}`,
-            `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`
-        ];
-
-        for (const proxyUrl of proxyUrls) {
-            try {
-                const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
-                if (htmlText && htmlText.length > 500) {
-                    const parsedItems = parseTrafficHtml(htmlText);
-                    if (parsedItems.length > 0) {
-                        trafficData = parsedItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // Method 2: Fallback to official RTHK Traffic RSS Feeds (No TD source)
-        const rthkFeeds = [
-            'https://rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
-            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
-            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml',
-            'https://www.rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
-            'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml'
-        ];
-
-        for (const feed of rthkFeeds) {
-            try {
-                const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
-                const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
-                if (res && res.items && res.items.length > 0) {
-                    const validItems = res.items.map(item => extractTimeAndTitle(item.title || item.description || '', item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
-
-        for (const feed of rthkFeeds) {
-            try {
-                const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
-                const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(res, "text/xml");
-                const items = Array.from(xmlDoc.querySelectorAll("item"));
-                if (items.length > 0) {
-                    const validItems = items.map(item => {
-                        const titleNode = item.querySelector("title");
-                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
-                        const titleText = titleNode ? titleNode.textContent.trim() : "";
-                        const dateText = dateNode ? dateNode.textContent.trim() : "";
-                        return extractTimeAndTitle(titleText, dateText);
-                    }).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
-                }
-            } catch(e) {}
-        }
-    }
-
-    
-    function parseTrafficHtml(htmlText) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, "text/html");
-        const results = [];
-        
+        const parser = new DOMParser(); const doc = parser.parseFromString(htmlText, "text/html"); const results = [];
         doc.querySelectorAll('script, style, nav, header, footer').forEach(el => el.remove());
         const candidates = Array.from(doc.body.querySelectorAll('li, tr, article, p, div, td, span, a, h3, h4, .item, .inner, .list-item, .traffic-item'));
         
@@ -803,9 +590,7 @@
             
             const res = extractTimeAndTitle(text);
             if (res && res.title && res.title.length > 5) {
-                if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) {
-                    results.push(res);
-                }
+                if (!results.some(r => r.title.includes(res.title) || res.title.includes(r.title))) results.push(res);
             }
         });
         return results;
@@ -818,11 +603,7 @@
             const resJson = await fetch(getUrl, { cache: "no-store" }).then(r => r.json());
             if (resJson && resJson.contents && resJson.contents.length > 500) {
                 const parsedItems = parseTrafficHtml(resJson.contents);
-                if (parsedItems.length > 0) {
-                    trafficData = parsedItems.slice(0, 15);
-                    rebuildQueueAndRender();
-                    return;
-                }
+                if (parsedItems.length > 0) { trafficData = parsedItems.slice(0, 15); rebuildQueueAndRender(); return; }
             }
         } catch(e) {}
 
@@ -832,112 +613,68 @@
             `https://thingproxy.freeboard.io/fetch/${targetUrl}`,
             `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`
         ];
-
         for (const proxyUrl of proxyUrls) {
             try {
                 const htmlText = await fetch(proxyUrl, { cache: "no-store" }).then(r => r.text());
                 if (htmlText && htmlText.length > 500) {
                     const parsedItems = parseTrafficHtml(htmlText);
-                    if (parsedItems.length > 0) {
-                        trafficData = parsedItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    if (parsedItems.length > 0) { trafficData = parsedItems.slice(0, 15); rebuildQueueAndRender(); return; }
                 }
             } catch(e) {}
         }
 
-        const rthkFeeds = [
-            'https://rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
-            'https://news.rthk.hk/rthk/ch/rss/traffic.xml',
-            'https://rthk.hk/rthk/news/rss/c_trafficnews.xml',
-            'https://www.rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml',
-            'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml'
-        ];
-
+        const rthkFeeds = [ 'https://rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml', 'https://news.rthk.hk/rthk/ch/rss/traffic.xml', 'https://rthk.hk/rthk/news/rss/c_trafficnews.xml', 'https://www.rthk.hk/rthk/news/rss/c_expressnews_ctraffic.xml', 'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml' ];
         for (const feed of rthkFeeds) {
             try {
                 const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
                 const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
                 if (res && res.items && res.items.length > 0) {
                     const validItems = res.items.map(item => extractTimeAndTitle(item.title || item.description || '', item.pubDate || '')).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    if (validItems.length > 0) { trafficData = validItems.slice(0, 15); rebuildQueueAndRender(); return; }
                 }
             } catch(e) {}
         }
-
         for (const feed of rthkFeeds) {
             try {
                 const xmlUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`;
                 const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(res, "text/xml");
+                const parser = new DOMParser(); const xmlDoc = parser.parseFromString(res, "text/xml");
                 const items = Array.from(xmlDoc.querySelectorAll("item"));
                 if (items.length > 0) {
                     const validItems = items.map(item => {
-                        const titleNode = item.querySelector("title");
-                        const dateNode = item.querySelector("pubDate") || item.querySelector("date");
-                        const titleText = titleNode ? titleNode.textContent.trim() : "";
-                        const dateText = dateNode ? dateNode.textContent.trim() : "";
-                        return extractTimeAndTitle(titleText, dateText);
+                        const titleNode = item.querySelector("title"); const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                        return extractTimeAndTitle(titleNode ? titleNode.textContent.trim() : "", dateNode ? dateNode.textContent.trim() : "");
                     }).filter(t => t && t.title && t.title.length > 5);
-                    if (validItems.length > 0) {
-                        trafficData = validItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    if (validItems.length > 0) { trafficData = validItems.slice(0, 15); rebuildQueueAndRender(); return; }
                 }
             } catch(e) {}
         }
     }
 
     async function fetchNews() {
-        // Multi-tier reliable feed URLs (Official RTHK + HK Gov feeds)
-        const feedUrls = [
-            'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml',
-            'https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_cinternational.xml',
-            'https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_cfinance.xml',
-            'https://news.rthk.hk/rthk/ch/rss/c_expressnews_clocal.xml',
-            'https://www.news.gov.hk/tc/common/html/topstories.rss.xml',
-            'https://www.news.gov.hk/tc/common/html/ticker.rss.xml'
-        ];
-
+        const feedUrls = [ 'https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml', 'https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_cinternational.xml', 'https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_cfinance.xml', 'https://news.rthk.hk/rthk/ch/rss/c_expressnews_clocal.xml', 'https://www.news.gov.hk/tc/common/html/topstories.rss.xml', 'https://www.news.gov.hk/tc/common/html/ticker.rss.xml' ];
         function formatItem(title, pubDate) {
             if (!title || title.includes('【重溫】')) return null;
             let timeStr = '';
             if (pubDate) {
                 const parsedD = new Date(pubDate);
                 if (!isNaN(parsedD.getTime())) {
-                    const y = parsedD.getFullYear();
-                    const m = String(parsedD.getMonth() + 1).padStart(2, '0');
-                    const d = String(parsedD.getDate()).padStart(2, '0');
+                    const y = parsedD.getFullYear(); const m = String(parsedD.getMonth() + 1).padStart(2, '0'); const d = String(parsedD.getDate()).padStart(2, '0');
                     const time = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                     timeStr = `${y}-${m}-${d}  ${time}`;
                 }
             }
-            if (!timeStr) {
-                const now = new Date();
-                timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            }
+            if (!timeStr) timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             return { title: title.trim(), time: timeStr };
         }
 
-        // Method 1: Try RSS2JSON API first
         for (const feedUrl of feedUrls) {
             try {
                 const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
                 const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
                 if (res && res.items && res.items.length > 0) {
                     const mappedItems = res.items.map(item => formatItem(item.title, item.pubDate)).filter(i => i !== null);
-                    if (mappedItems.length > 0) {
-                        newsData = mappedItems.slice(0, 15);
-                        rebuildQueueAndRender();
-                        return;
-                    }
+                    if (mappedItems.length > 0) { newsData = mappedItems.slice(0, 15); rebuildQueueAndRender(); return; }
                 }
             } catch(e) {}
         }
@@ -947,31 +684,21 @@
                 try {
                     const xmlUrl = proxyUrlTemplate.replace("URL_PLACEHOLDER", encodeURIComponent(feedUrl));
                     const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(res, "text/xml");
+                    const parser = new DOMParser(); const xmlDoc = parser.parseFromString(res, "text/xml");
                     const items = Array.from(xmlDoc.querySelectorAll("item"));
                     if (items.length > 0) {
                         const mappedItems = items.map(item => {
-                            const titleNode = item.querySelector("title");
-                            const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                            const titleNode = item.querySelector("title"); const dateNode = item.querySelector("pubDate") || item.querySelector("date");
                             return formatItem(titleNode ? titleNode.textContent : "", dateNode ? dateNode.textContent : "");
                         }).filter(i => i !== null);
-
-                        if (mappedItems.length > 0) {
-                            newsData = mappedItems.slice(0, 15);
-                            rebuildQueueAndRender();
-                            return true;
-                        }
+                        if (mappedItems.length > 0) { newsData = mappedItems.slice(0, 15); rebuildQueueAndRender(); return true; }
                     }
                 } catch(e) {}
             }
             return false;
         };
 
-        // Method 2: Fallback to AllOrigins XML Proxy
         if (await parseXmlFeed(`https://api.allorigins.win/raw?url=URL_PLACEHOLDER`)) return;
-
-        // Method 3: Fallback to CodeTabs CORS proxy
         await parseXmlFeed(`https://api.codetabs.com/v1/proxy?quest=URL_PLACEHOLDER`);
     }
 
@@ -1038,15 +765,11 @@
     }
 
     function rebuildQueueAndRender() {
-        itemsPerPage = getDynamicItemsPerPage();
-        pagesQueue = [];
-        pagesQueue.push({ type: 'clock' });
+        itemsPerPage = getDynamicItemsPerPage(); pagesQueue = []; pagesQueue.push({ type: 'clock' });
 
         if (compiledRouteArray.length > 0) {
             const totalBusPages = Math.ceil(compiledRouteArray.length / itemsPerPage);
-            for (let i = 0; i < totalBusPages; i++) {
-                pagesQueue.push({ type: 'bus', data: compiledRouteArray.slice(i * itemsPerPage, (i + 1) * itemsPerPage) });
-            }
+            for (let i = 0; i < totalBusPages; i++) pagesQueue.push({ type: 'bus', data: compiledRouteArray.slice(i * itemsPerPage, (i + 1) * itemsPerPage) });
         }
 
         if (hourlyData && hourlyData.length > 0) pagesQueue.push({ type: 'hourly', data: hourlyData });
@@ -1054,100 +777,59 @@
         if (localWeatherText) pagesQueue.push({ type: 'weatherText', data: localWeatherText });
         stockData.forEach(stk => pagesQueue.push({ type: 'stock', data: stk }));
         
-        // Always include traffic report page in rotation queue!
         const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
         if (trafficData && trafficData.length > 0) {
-            for (let i = 0; i < trafficData.length; i += trafficPerPage) {
-                pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
-            }
+            for (let i = 0; i < trafficData.length; i += trafficPerPage) pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
         } else {
-            // Guaranteed fallback when there are no special traffic reports within 4 hours
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            const dateStr = `${y}-${m}-${d}`;
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            const now = new Date(); const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0'); const d = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${y}-${m}-${d}`; const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             pagesQueue.push({ type: 'traffic', data: [{ date: dateStr, time: timeStr, title: '目前全港交通大致正常 / 暫無特別交通消息 No special traffic reports at this time.' }] });
         }
 
-        
-        // Always include traffic report page in rotation queue!
-        const trafficPerPage = Math.max(2, Math.min(itemsPerPage, 3));
-        if (trafficData && trafficData.length > 0) {
-            for (let i = 0; i < trafficData.length; i += trafficPerPage) {
-                pagesQueue.push({ type: 'traffic', data: trafficData.slice(i, i + trafficPerPage) });
-            }
-        } else {
-            // Guaranteed fallback when there are no special traffic reports within 4 hours
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            const dateStr = `${y}-${m}-${d}`;
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            pagesQueue.push({ type: 'traffic', data: [{ date: dateStr, time: timeStr, title: '目前全港交通大致正常 / 暫無特別交通消息 No special traffic reports at this time.' }] });
-        }
-
-        // Cap news at a maximum of 4 pages with exactly 3 headlines each!
         const newsPerPage = 3;
         if (newsData.length > 0) {
             const cappedNews = newsData.slice(0, 12);
             for (let i = 0; i < cappedNews.length; i += newsPerPage) pagesQueue.push({ type: 'news', data: cappedNews.slice(i, i + newsPerPage) });
         } else {
-            // Placeholder/loading state when news feed is loading or temporarily blocked
             pagesQueue.push({ type: 'news', data: ["載入即時新聞中... Loading RTHK / Gov News...", "正在連接新聞通訊社... Please wait...", "如長時間未能顯示，將於下次自動更新時重試。"] });
         }
 
         if (currentPageIndex >= pagesQueue.length) currentPageIndex = 0;
         renderActivePage();
-        
         if (!autoPageRotationInterval) autoPageRotationInterval = setInterval(autoRotate, TIME_PER_PAGE_MS);
     }
 
     function renderActivePage() {
-        const wrapper = document.getElementById('pageWrapper');
-        const mainHeader = document.getElementById('mainHeader');
+        const wrapper = document.getElementById('pageWrapper'); const mainHeader = document.getElementById('mainHeader');
         if (pagesQueue.length === 0) return;
-        
         const page = pagesQueue[currentPageIndex]; wrapper.innerHTML = '';
         const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const daysEnArr = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
         if (page.type === 'clock') {
             mainHeader.style.opacity = '0'; 
-            const now = new Date(); 
-            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            const now = new Date(); const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
             const daysTc = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
             const tcDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${daysTc[now.getDay()]})`;
             const enDate = `${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()} (${daysEnArr[now.getDay()]})`;
-            const fullDateString = `${tcDate} \u00A0\u00A0 ${enDate}`;
-
+            
             wrapper.innerHTML = `
                 <div class="center-layout" style="margin-top: -80px;">
                     <div id="centerLiveTime">${timeString}</div>
-                    <div id="centerLiveDate">${fullDateString}</div>
-                    <div class="center-weather-row">
-                        <div id="centerWeatherWarnings">${currentWarnHTML}</div>
-                    </div>
-                </div>
-            `;
+                    <div id="centerLiveDate">${tcDate} &nbsp;&nbsp; ${enDate}</div>
+                    <div class="center-weather-row"><div id="centerWeatherWarnings">${currentWarnHTML}</div></div>
+                </div>`;
         } 
         else if (page.type === 'hourly') {
             mainHeader.style.opacity = '1';
             let hourlyHtml = page.data.map(h => `
                 <div class="hourly-card">
-                    <div class="hc-time">${h.time}</div>
-                    <div class="hc-icon">${h.icon}</div>
-                    <div class="hc-temp">${h.temp}°C</div>
-                    <div class="hc-rain">☔ ${h.rain}%</div>
-                </div>
-            `).join('');
+                    <div class="hc-time">${h.time}</div><div class="hc-icon">${h.icon}</div>
+                    <div class="hc-temp">${h.temp}°C</div><div class="hc-rain">☔ ${h.rain}%</div>
+                </div>`).join('');
             wrapper.innerHTML = `
                 <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
-                    <div style="display: flex; flex-direction: row; gap: 12px; flex-wrap: wrap; align-content: center; justify-content: center; width: 100%;">
-                        ${hourlyHtml}
-                    </div>
+                    <div style="display: flex; flex-direction: row; gap: 12px; flex-wrap: wrap; align-content: center; justify-content: center; width: 100%;">${hourlyHtml}</div>
                 </div>`;
         }
         else if (page.type === 'weatherText') {
@@ -1164,64 +846,26 @@
             mainHeader.style.opacity = '1';
             let forecastHtml = page.data.map(f => {
                 const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${f.ForecastIcon}.png`;
-                const year = parseInt(f.forecastDate.substring(0, 4), 10);
-                const monthNum = parseInt(f.forecastDate.substring(4, 6), 10);
-                const dayNum = parseInt(f.forecastDate.substring(6, 8), 10);
-                const dateObj = new Date(year, monthNum - 1, dayNum);
-                const dayEn = daysEnArr[dateObj.getDay()];
-                
-                const dateLine1 = `${monthNum}月${dayNum}日 &nbsp;|&nbsp; ${dayNum} ${monthsEn[monthNum - 1]}`;
-                const dateLine2 = `(${f.week} ${dayEn})`;
-                const minT = f.forecastMintemp ? f.forecastMintemp.value : '--';
-                const maxT = f.forecastMaxtemp ? f.forecastMaxtemp.value : '--';
-
+                const y = parseInt(f.forecastDate.substring(0, 4), 10); const m = parseInt(f.forecastDate.substring(4, 6), 10); const d = parseInt(f.forecastDate.substring(6, 8), 10);
+                const dayEn = daysEnArr[new Date(y, m - 1, d).getDay()];
+                const dateLine1 = `${m}月${d}日 &nbsp;|&nbsp; ${d} ${monthsEn[m - 1]}`;
+                const minT = f.forecastMintemp ? f.forecastMintemp.value : '--'; const maxT = f.forecastMaxtemp ? f.forecastMaxtemp.value : '--';
                 return `
                     <div class="forecast-card">
-                        <div class="fc-date">${dateLine1}</div>
-                        <div class="fc-week">${dateLine2}</div>
-                        <img src="${iconSrc}" class="fc-icon" />
-                        <div class="fc-temp">${minT}° - ${maxT}°</div>
-                    </div>
-                `;
+                        <div class="fc-date">${dateLine1}</div><div class="fc-week">(${f.week} ${dayEn})</div>
+                        <img src="${iconSrc}" class="fc-icon" /><div class="fc-temp">${minT}° - ${maxT}°</div>
+                    </div>`;
             }).join('');
             wrapper.innerHTML = `<div class="center-layout" style="flex-direction: row; gap: 15px; flex-wrap: wrap; align-content: center;">${forecastHtml}</div>`;
         }
         else if (page.type === 'stock') {
-            mainHeader.style.opacity = '1';
-            const s = page.data;
+            mainHeader.style.opacity = '1'; const s = page.data;
             const colorClass = s.change > 0 ? 'color-up' : (s.change < 0 ? 'color-down' : 'color-flat');
             const sign = s.change > 0 ? '+' : '';
             wrapper.innerHTML = `
                 <div class="center-layout" style="margin-top: -60px;">
-                    <div class="stock-symbol">${s.symbol}</div>
-                    <div class="stock-price">${s.price}</div>
+                    <div class="stock-symbol">${s.symbol}</div><div class="stock-price">${s.price}</div>
                     <div class="stock-change ${colorClass}">${sign}${s.change} (${sign}${s.pct}%)</div>
-                </div>
-            `;
-        }
-        else if (page.type === 'traffic') {
-            mainHeader.style.opacity = '1';
-            let trafficHtml = page.data.map(t => {
-                const dateStr = typeof t === 'object' && t !== null && t.date ? t.date : '';
-                const timeStr = typeof t === 'object' && t !== null && t.time ? t.time : '';
-                const itemTitle = typeof t === 'object' && t !== null ? t.title : t;
-                
-                let dtPrefix = '';
-                if (dateStr && timeStr) {
-                    dtPrefix = `<span style="color: #FECACA; font-weight: 700; white-space: nowrap; margin-right: 8px;">${dateStr} &nbsp;${timeStr} &nbsp;|&nbsp;</span>`;
-                } else if (timeStr) {
-                    dtPrefix = `<span style="color: #FECACA; font-weight: 700; white-space: nowrap; margin-right: 8px;">${timeStr} &nbsp;|&nbsp;</span>`;
-                }
-                
-                return `
-                <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); font-size: clamp(1.3rem, 3vw, 2rem); padding: 18px 24px; line-height: 1.5; display: block;">
-                    ${dtPrefix}<span>${itemTitle}</span>
-                </div>`;
-            }).join('');
-            wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
-                    
-                    ${trafficHtml}
                 </div>`;
         }
         else if (page.type === 'traffic') {
@@ -1230,41 +874,27 @@
                 const dateStr = typeof t === 'object' && t !== null && t.date ? t.date : '';
                 const timeStr = typeof t === 'object' && t !== null && t.time ? t.time : '';
                 const itemTitle = typeof t === 'object' && t !== null ? t.title : t;
-                
-                let dtPrefix = '';
-                let fullTime = [dateStr, timeStr].filter(Boolean).join('  ');
-                
-                if (fullTime) {
-                    dtPrefix = `<div style="color: #FECACA; font-size: clamp(0.9rem, 2.5vw, 1.4rem); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.03em;">${fullTime}</div>`;
-                }
-                
+                let dtPrefix = ''; let fullTime = [dateStr, timeStr].filter(Boolean).join('  ');
+                if (fullTime) dtPrefix = `<div style="color: #FECACA; font-size: clamp(0.9rem, 2.5vw, 1.4rem); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.03em;">${fullTime}</div>`;
                 return `
                 <div class="news-title-row" style="background: rgba(220, 38, 38, 0.35); border-color: rgba(248, 113, 113, 0.5); display: flex; flex-direction: column; align-items: flex-start; padding: 16px 26px;">
                     ${dtPrefix}<div style="width: 100%; font-size: clamp(1.3rem, 3vw, 2rem); line-height: 1.5;">${itemTitle}</div>
                 </div>`;
             }).join('');
-            wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">
-                    ${trafficHtml}
-                </div>`;
+            wrapper.innerHTML = `<div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px;">${trafficHtml}</div>`;
         }
         else if (page.type === 'news') {
             mainHeader.style.opacity = '1';
             let titlesHtml = page.data.map(t => {
                 const titleStr = typeof t === 'object' && t !== null ? t.title : t;
                 const timeStr = typeof t === 'object' && t !== null && t.time ? t.time : '';
-                
                 let dtPrefix = '';
                 if (timeStr && titleStr !== "載入即時新聞中... Loading RTHK / Gov News..." && !titleStr.includes("正在連接新聞通訊社")) {
                     dtPrefix = `<div style="color: #93C5FD; font-size: clamp(0.9rem, 2.5vw, 1.4rem); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.03em;">${timeStr}</div>`;
                 }
                 return `<div class="news-title-row" style="display: flex; flex-direction: column; align-items: flex-start; padding: 16px 26px;">${dtPrefix}<div style="width: 100%;">${titleStr}</div></div>`;
             }).join('');
-            
-            wrapper.innerHTML = `
-                <div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-                    ${titlesHtml}
-                </div>`;
+            wrapper.innerHTML = `<div class="center-layout" style="justify-content: center; gap: 12px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 10px 20px;">${titlesHtml}</div>`;
         }
         else if (page.type === 'bus') {
             mainHeader.style.opacity = '1';
@@ -1274,16 +904,12 @@
                     <div class="route-ident-block">
                         <div class="route-badge" style="text-shadow: var(--text-glow);">${line.route}</div>
                         <div class="dest-col">
-                            <div class="dest-tc">往 ${line.dest_tc}</div>
-                            <div class="dest-en">To ${line.dest_en}</div>
+                            <div class="dest-tc">往 ${line.dest_tc}</div><div class="dest-en">To ${line.dest_en}</div>
                             <div class="stop-spec-box">${line.stopNameTc} (${line.stopNameEn})</div>
                         </div>
-                    </div>
-                `;
-                
+                    </div>`;
                 let timelineHtml = `<div class="arrivals-timeline" onclick="event.stopPropagation()">`;
                 const activeArrivals = line.arrivals.slice(0, 3);
-
                 if (activeArrivals.length === 0) {
                     timelineHtml += `<div style="color:var(--text-main); font-size:1.1rem; font-style:italic; font-weight:600; text-shadow:var(--text-glow);">No departures scheduled / 沒有班次</div>`;
                 } else {
@@ -1292,13 +918,7 @@
                         const displayClock = new Date(arrival.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                         let nodeClass = "arrival-node"; if (idx === 0 && diff <= 3) nodeClass += " imminent";
                         const minuteString = diff === 0 ? "到站中 Arriving" : `${diff} 分鐘 Mins`;
-                        
-                        timelineHtml += `
-                            <div class="${nodeClass}">
-                                <span class="node-mins">${minuteString}</span>
-                                <span class="node-clock">${displayClock}</span>
-                            </div>
-                        `;
+                        timelineHtml += `<div class="${nodeClass}"><span class="node-mins">${minuteString}</span><span class="node-clock">${displayClock}</span></div>`;
                     });
                 }
                 timelineHtml += `</div>`; card.innerHTML = identHtml + timelineHtml; wrapper.appendChild(card);
@@ -1318,32 +938,22 @@
     function autoRotate() {
         if(pagesQueue.length <= 1) return;
         let nextIdx = (currentPageIndex + 1) % pagesQueue.length;
-        
         if (pagesQueue[currentPageIndex].type === 'bus') {
             autoBusPageCount++;
             if (autoBusPageCount >= 4 && pagesQueue[nextIdx].type === 'bus') {
-                while (pagesQueue[nextIdx].type === 'bus') {
-                    nextIdx = (nextIdx + 1) % pagesQueue.length;
-                }
+                while (pagesQueue[nextIdx].type === 'bus') nextIdx = (nextIdx + 1) % pagesQueue.length;
             }
-        } else {
-            autoBusPageCount = 0; 
-        }
+        } else autoBusPageCount = 0; 
         transitionToNextPage(nextIdx);
     }
 
     function handleGlobalTap(event) {
         if (pagesQueue.length <= 1) return;
         if (autoPageRotationInterval) clearInterval(autoPageRotationInterval);
-        
         autoBusPageCount = 0; 
-        
         const firstBusIndex = pagesQueue.findIndex(p => p.type === 'bus');
-        if (pagesQueue[currentPageIndex].type !== 'bus' && firstBusIndex !== -1) {
-            transitionToNextPage(firstBusIndex);
-        } else {
-            transitionToNextPage();
-        }
+        if (pagesQueue[currentPageIndex].type !== 'bus' && firstBusIndex !== -1) transitionToNextPage(firstBusIndex);
+        else transitionToNextPage();
         autoPageRotationInterval = setInterval(autoRotate, TIME_PER_PAGE_MS);
     }
 
@@ -1393,8 +1003,7 @@
                     <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:6px; font-size:0.9rem; align-items:center; color:white;">
                         <span>Custom Photo ${idx + 1}</span>
                         <button onclick="deletePhoto(${rec.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:600;">X</button>
-                    </div>
-                `;
+                    </div>`;
             });
         }
     }
@@ -1405,28 +1014,16 @@
         const container = document.getElementById('bgSlideContainer'); container.innerHTML = '';
         if(slideshowIntervalId) clearInterval(slideshowIntervalId);
         blobUrlsToClean.forEach(URL.revokeObjectURL); blobUrlsToClean = [];
-        
         const records = await getAllBlobsFromIndexedDB();
         
-        // Includes 5 default GitHub backgrounds
         const sources = records.length > 0 ? records.map(r => { const u = URL.createObjectURL(r.blob); blobUrlsToClean.push(u); return u; }) : [
-            "./default-bg-1.jpg",
-            "./default-bg-2.jpg",
-            "./default-bg-3.jpg",
-            "./default-bg-4.jpg",
-            "./default-bg-5.jpg",
-            "./default-bg-6.jpg",
-            "./default-bg-7.jpg",
-            "./default-bg-8.jpg",
-            "./default-bg-9.jpg",
-            "./default-bg-10.jpg"
+            "./default-bg-1.jpg", "./default-bg-2.jpg", "./default-bg-3.jpg", "./default-bg-4.jpg", "./default-bg-5.jpg",
+            "./default-bg-6.jpg", "./default-bg-7.jpg", "./default-bg-8.jpg", "./default-bg-9.jpg", "./default-bg-10.jpg"
         ];
-        
         sources.forEach((s, i) => { 
             const d = document.createElement('div'); d.className = `bg-slide ${i===0?'active':''}`; 
             d.style.backgroundImage = `url('${s}')`; container.appendChild(d); 
         });
-        
         let bgIndex = 0; 
         slideshowIntervalId = setInterval(() => { 
             const s = document.querySelectorAll('.bg-slide'); if(s.length <= 1) return; 
@@ -1438,7 +1035,6 @@
         const f = Array.from(e.target.files); if(!f.length) return; 
         const uploadBtn = document.getElementById('uploadPhotoBtn');
         const oldText = uploadBtn.textContent; uploadBtn.textContent = "Processing...";
-        
         for(let file of f) { 
             try { 
                 const b = await new Promise((res,rej) => { 
@@ -1452,11 +1048,11 @@
                 await saveBlobToIndexedDB(b); 
             } catch(e){} 
         }
-        
         uploadBtn.textContent = oldText; await renderSettingsPhotoList(); await loadAndRenderBackgroundSlideshow();
     });
 
     async function requestWakeLock() { try { if ('wakeLock' in navigator) { wakeLockInstance = await navigator.wakeLock.request('screen'); } } catch (e) {} }
 </script>
+
 </body>
 </html>
