@@ -307,7 +307,8 @@
         acquireDeviceLocation(); 
 
         setInterval(() => { 
-            fetchHKOWeather(); fetchForecast(); fetchStocks(); 
+            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchHourlyWeather(); fetchLocalWeatherText();
+        }, 60000); 
 
         setInterval(() => {
             fetchNews();
@@ -585,16 +586,18 @@
         function formatItem(title, pubDate) {
             if (!title || title.includes('【重溫】')) return null;
             let timeStr = '';
+            let timestamp = new Date().getTime();
             if (pubDate) {
                 const parsedD = new Date(pubDate);
                 if (!isNaN(parsedD.getTime())) {
+                    timestamp = parsedD.getTime();
                     const y = parsedD.getFullYear(); const m = String(parsedD.getMonth() + 1).padStart(2, '0'); const d = String(parsedD.getDate()).padStart(2, '0');
                     const time = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                     timeStr = `${y}-${m}-${d}  ${time}`;
                 }
             }
-            if (!timeStr) timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            return { title: title.trim(), time: timeStr };
+            if (!timeStr) timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            return { title: title.trim(), time: timeStr, timestamp: timestamp };
         }
 
         for (const feedUrl of feedUrls) {
@@ -602,7 +605,7 @@
                 const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
                 const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
                 if (res && res.items && res.items.length > 0) {
-                    const mappedItems = res.items.map(item => formatItem(item.title, item.pubDate)).filter(i => i !== null);
+                    const mappedItems = res.items.map(item => formatItem(item.title, item.pubDate)).filter(i => i !== null).sort((a, b) => b.timestamp - a.timestamp);
                     if (mappedItems.length > 0) { newsData = mappedItems.slice(0, 15); rebuildQueueAndRender(); return; }
                 }
             } catch(e) {}
@@ -619,7 +622,7 @@
                         const mappedItems = items.map(item => {
                             const titleNode = item.querySelector("title"); const dateNode = item.querySelector("pubDate") || item.querySelector("date");
                             return formatItem(titleNode ? titleNode.textContent : "", dateNode ? dateNode.textContent : "");
-                        }).filter(i => i !== null);
+                        }).filter(i => i !== null).sort((a, b) => b.timestamp - a.timestamp);
                         if (mappedItems.length > 0) { newsData = mappedItems.slice(0, 15); rebuildQueueAndRender(); return true; }
                     }
                 } catch(e) {}
@@ -770,7 +773,7 @@
                 const iconSrc = `https://www.hko.gov.hk/images/wxicon/pic${f.ForecastIcon}.png`;
                 const y = parseInt(f.forecastDate.substring(0, 4), 10); const m = parseInt(f.forecastDate.substring(4, 6), 10); const d = parseInt(f.forecastDate.substring(6, 8), 10);
                 const dayEn = daysEnArr[new Date(y, m - 1, d).getDay()];
-                const dateLine1 = `${m}月${d}日 &nbsp;|&nbsp; ${d} ${monthsEn[m - 1]}`;
+                const dateLine1 = `${m}月${d}日 &nbsp;|&nbsp; <span style="font-size: 0.75em; letter-spacing: -0.02em;">${d} ${monthsEn[m - 1]}</span>`;
                 const minT = f.forecastMintemp ? f.forecastMintemp.value : '--'; const maxT = f.forecastMaxtemp ? f.forecastMaxtemp.value : '--';
                 return `
                     <div class="forecast-card">
