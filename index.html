@@ -600,38 +600,58 @@
             return { title: title.trim(), time: timeStr, timestamp: timestamp };
         }
 
-        for (const feedUrl of feedUrls) {
+        let allNews = [];
+
+        // Try rss2json first in parallel
+        await Promise.all(feedUrls.map(async (feedUrl) => {
             try {
                 const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
                 const res = await fetch(rssUrl, { cache: "no-store" }).then(r => r.json());
                 if (res && res.items && res.items.length > 0) {
-                    const mappedItems = res.items.map(item => formatItem(item.title, item.pubDate)).filter(i => i !== null).sort((a, b) => b.timestamp - a.timestamp);
-                    if (mappedItems.length > 0) { newsData = mappedItems.slice(0, 15); rebuildQueueAndRender(); return; }
+                    const mappedItems = res.items.map(item => formatItem(item.title, item.pubDate)).filter(i => i !== null);
+                    allNews = allNews.concat(mappedItems);
                 }
             } catch(e) {}
+        }));
+
+        // If rss2json failed to get enough items, fallback to raw xml proxies
+        if (allNews.length < 5) {
+            const parseXmlFeed = async (proxyUrlTemplate) => {
+                await Promise.all(feedUrls.map(async (feedUrl) => {
+                    try {
+                        const xmlUrl = proxyUrlTemplate.replace("URL_PLACEHOLDER", encodeURIComponent(feedUrl));
+                        const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
+                        const parser = new DOMParser(); const xmlDoc = parser.parseFromString(res, "text/xml");
+                        const items = Array.from(xmlDoc.querySelectorAll("item"));
+                        if (items.length > 0) {
+                            const mappedItems = items.map(item => {
+                                const titleNode = item.querySelector("title"); const dateNode = item.querySelector("pubDate") || item.querySelector("date");
+                                return formatItem(titleNode ? titleNode.textContent : "", dateNode ? dateNode.textContent : "");
+                            }).filter(i => i !== null);
+                            allNews = allNews.concat(mappedItems);
+                        }
+                    } catch(e) {}
+                }));
+            };
+            await parseXmlFeed(`https://api.allorigins.win/raw?url=URL_PLACEHOLDER`);
+            if (allNews.length < 5) {
+                await parseXmlFeed(`https://api.codetabs.com/v1/proxy?quest=URL_PLACEHOLDER`);
+            }
         }
 
-        const parseXmlFeed = async (proxyUrlTemplate) => {
-            for (const feedUrl of feedUrls) {
-                try {
-                    const xmlUrl = proxyUrlTemplate.replace("URL_PLACEHOLDER", encodeURIComponent(feedUrl));
-                    const res = await fetch(xmlUrl, { cache: "no-store" }).then(r => r.text());
-                    const parser = new DOMParser(); const xmlDoc = parser.parseFromString(res, "text/xml");
-                    const items = Array.from(xmlDoc.querySelectorAll("item"));
-                    if (items.length > 0) {
-                        const mappedItems = items.map(item => {
-                            const titleNode = item.querySelector("title"); const dateNode = item.querySelector("pubDate") || item.querySelector("date");
-                            return formatItem(titleNode ? titleNode.textContent : "", dateNode ? dateNode.textContent : "");
-                        }).filter(i => i !== null).sort((a, b) => b.timestamp - a.timestamp);
-                        if (mappedItems.length > 0) { newsData = mappedItems.slice(0, 15); rebuildQueueAndRender(); return true; }
-                    }
-                } catch(e) {}
+        if (allNews.length > 0) {
+            // Remove exact duplicate titles
+            const uniqueNews = [];
+            const titles = new Set();
+            for (const item of allNews) {
+                if (!titles.has(item.title)) {
+                    titles.add(item.title);
+                    uniqueNews.push(item);
+                }
             }
-            return false;
-        };
-
-        if (await parseXmlFeed(`https://api.allorigins.win/raw?url=URL_PLACEHOLDER`)) return;
-        await parseXmlFeed(`https://api.codetabs.com/v1/proxy?quest=URL_PLACEHOLDER`);
+            newsData = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 18);
+            rebuildQueueAndRender();
+        }
     }
 
     function acquireDeviceLocation() {
