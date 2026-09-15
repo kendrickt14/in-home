@@ -307,8 +307,11 @@
         acquireDeviceLocation(); 
 
         setInterval(() => { 
-            fetchHKOWeather(); fetchForecast(); fetchStocks(); fetchNews(); fetchHourlyWeather(); fetchLocalWeatherText();
-        }, 60000); 
+            fetchHKOWeather(); fetchForecast(); fetchStocks(); 
+
+        setInterval(() => {
+            fetchNews();
+        }, 300000); 
 
         setInterval(async () => {
             if(userLat && userLng) await fetchAndAggregateRouteFeeds();
