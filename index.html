@@ -538,46 +538,6 @@
         rebuildQueueAndRender();
     }
 
-    function extractTimeAndTitle(text, pubDate = '') {
-        const cleanText = text.replace(/\s+/g, ' ').trim();
-        if (cleanText.length < 6 || cleanText.includes('Copyright') || cleanText.includes('版權所有') || cleanText.includes('香港電台網站') || cleanText.includes('【重溫】')) return null;
-        const lowerC = cleanText.toLowerCase();
-        if (lowerC.includes('搜尋 search') || lowerC.includes('過去12個月') || lowerC.includes('請選擇日期')) return null;
-        if (cleanText.includes('01 02 03 04 05') || cleanText.includes('13 14 15 16 17')) return null;
-        if (cleanText.includes('電視') || cleanText.includes('電台') || cleanText.includes('熱門') || cleanText.includes('首頁')) return null;
-
-        const timeMatch = cleanText.match(/(\d{1,2}:\d{2}(?:\:\d{2})?)/);
-        const dateMatch = cleanText.match(/(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?|\d{1,2}[-/]\d{1,2}[-/]\d{4}|\d{1,2}月\d{1,2}日)/i);
-
-        let dateStr = ''; let timeStr = ''; let titleStr = cleanText; const now = new Date();
-        if (timeMatch) timeStr = timeMatch[1].substring(0, 5); 
-        else if (pubDate) { const parsedD = new Date(pubDate); if (!isNaN(parsedD.getTime())) timeStr = parsedD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-        if (!timeStr) timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
-        if (dateMatch) {
-            let dRaw = dateMatch[1].replace('年', '-').replace('月', '-').replace('/', '-').replace('日', '');
-            let dParts = dRaw.split('-').map(p => parseInt(p, 10));
-            if (dParts.length === 3 && !isNaN(dParts[0]) && !isNaN(dParts[1]) && !isNaN(dParts[2])) {
-                if (dParts[0] > 1000) dateStr = `${dParts[0]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[2]).padStart(2, '0')}`;
-                else if (dParts[2] > 1000) dateStr = `${dParts[2]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[0]).padStart(2, '0')}`;
-            } else if (dParts.length === 2 && !isNaN(dParts[0]) && !isNaN(dParts[1])) dateStr = `${now.getFullYear()}-${String(dParts[0]).padStart(2, '0')}-${String(dParts[1]).padStart(2, '0')}`;
-        } else if (pubDate) {
-            const parsedD = new Date(pubDate);
-            if (!isNaN(parsedD.getTime())) { const y = parsedD.getFullYear(); const m = String(parsedD.getMonth() + 1).padStart(2, '0'); const d = String(parsedD.getDate()).padStart(2, '0'); dateStr = `${y}-${m}-${d}`; }
-        }
-        if (!dateStr) { const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0'); const d = String(now.getDate()).padStart(2, '0'); dateStr = `${y}-${m}-${d}`; }
-
-        if (dateMatch) titleStr = titleStr.replace(dateMatch[0], '');
-        if (timeMatch) titleStr = titleStr.replace(timeMatch[0], '');
-        titleStr = titleStr.replace(/\bHKT\b/gi, '').trim();
-        titleStr = titleStr.replace(/^\([0-9\s:：.\-/年-月日]+\)|^\[[0-9\s:：.\-/年-月日]+\]/gi, '').trim();
-        titleStr = titleStr.replace(/\([0-9\s:：.\-/年-月日]+\)$|\[[0-9\s:：.\-/年-月日]+\]$/gi, '').trim();
-        titleStr = titleStr.replace(/^[-,.:/|–—\s]+|[-,.:/|–—\s]+$/g, '').trim();
-        titleStr = titleStr.replace(/^交通消息[:：\s]*/i, '').trim();
-
-        if (titleStr.length <= 4 || /^[\d\s\-/:.,HKT年-月日()（）\[\]]+$/i.test(titleStr)) return null;
-        return { date: dateStr, time: timeStr, title: titleStr, timestamp: now.getTime() };
-    }
 
     
     
@@ -587,8 +547,18 @@
             if (!title || title.includes('【重溫】')) return null;
             let timeStr = '';
             let timestamp = new Date().getTime();
+            
             if (pubDate) {
-                const parsedD = new Date(pubDate);
+                let safeDate = pubDate;
+                // Fix rss2json missing UTC timezone
+                if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(safeDate)) {
+                    safeDate = safeDate.replace(' ', 'T') + 'Z';
+                } else {
+                    // Fix standard timezone abbreviation that JS can't parse
+                    safeDate = safeDate.replace(/\bHKT\b/gi, '+0800');
+                }
+                
+                const parsedD = new Date(safeDate);
                 if (!isNaN(parsedD.getTime())) {
                     timestamp = parsedD.getTime();
                     const y = parsedD.getFullYear(); const m = String(parsedD.getMonth() + 1).padStart(2, '0'); const d = String(parsedD.getDate()).padStart(2, '0');
@@ -596,8 +566,18 @@
                     timeStr = `${y}-${m}-${d}  ${time}`;
                 }
             }
-            if (!timeStr) timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            return { title: title.trim(), time: timeStr, timestamp: timestamp };
+            
+            if (!timeStr) {
+                timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
+            
+            // Clean up titles (remove annoying trailing timestamps like "(12:30)")
+            let cleanTitle = title.trim();
+            cleanTitle = cleanTitle.replace(/\bHKT\b/gi, '').trim();
+            cleanTitle = cleanTitle.replace(/^\([0-9\s:：.\-\/年-月日]+\)|^\[[0-9\s:：.\-\/年-月日]+\]/gi, '').trim();
+            cleanTitle = cleanTitle.replace(/\([0-9\s:：.\-\/年-月日]+\)$|\[[0-9\s:：.\-\/年-月日]+\]$/gi, '').trim();
+
+            return { title: cleanTitle, time: timeStr, timestamp: timestamp };
         }
 
         let allNews = [];
